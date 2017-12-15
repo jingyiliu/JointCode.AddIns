@@ -1,0 +1,20 @@
+<Addin>
+	<Header>
+		<Guid>33579248-B58B-427C-BE39-25B29A267327</Guid>
+		<FriendName>Child addin</FriendName>
+	</Header>
+
+	<Extensions>
+		<Implementation>
+			<!--
+			<MenuStrip path="MenuStrip/Options">
+				<ToolStripMenuItem Id="ChildAddin" Name="ChildAddin" CommandType="JointCode.AddIns.ChildAddin.ChildAddinCommand"/>
+			</MenuStrip>
+			-->
+			<ToolStrip>
+				<ToolStripButton Id="ChildAddin" Name="ChildAddin" CommandType="JointCode.AddIns.ChildAddin.ChildAddinCommand"/>
+			</ToolStrip>
+		</Implementation>
+	</Extensions>
+
+</Addin>

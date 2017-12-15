@@ -1,0 +1,38 @@
+<Addin>
+	<Header>
+		<Guid>308F6695-6AD8-468C-A69B-D4C241E2A92D</Guid>
+		<FriendName>Root addin</FriendName>
+		<Version>1.0.0.0</Version>
+		<CompatVersion>1.0.0.0</CompatVersion>
+		<Category>Root</Category>
+		<Enabled>true</Enabled>
+		<Url>http://some/url</Url>
+		<Description>A root addin</Description>
+		<Author>Some author</Author>
+		<ContactAddress>admin@WebSite.com</ContactAddress>
+		<Company>Some company</Company>
+		<Copyright>Office</Copyright>
+	</Header>
+
+	<Extensions>
+		<Declaration>
+			<MenuStrip type="JointCode.AddIns.RootAddin.MenuStripExtensionPoint" friendName="FriendDisplayName" description="This is the extension for MenuStrip">
+				<ToolStripMenuItem type="JointCode.AddIns.RootAddin.ToolStripMenuItemExtensionBuilder">
+					<ToolStripMenuItem/>
+					<MyToolStripMenuItem type="JointCode.AddIns.RootAddin.MyToolStripMenuItemExtensionBuilder"/>
+					<ToolStripSeparator type="JointCode.AddIns.RootAddin.ToolStripSeparatorExtensionBuilder" description="This is a separator"/>
+				</ToolStripMenuItem>
+			</MenuStrip>
+		</Declaration>
+
+		<Implementation>
+			<MenuStrip>
+				<ToolStripMenuItem Id="Options" Name="Options">
+					<ToolStripMenuItem Id="rootMenu1" Name="00000RootMenu1" Tooltip="This is rootMenu1" CommandType="JointCode.AddIns.RootAddin.RootMenu1Command"/>
+					<MyToolStripMenuItem Id="rootMenu2" Name="8888888RootMenu2" Tooltip="This is rootMenu2" CommandType="JointCode.AddIns.RootAddin.RootMenu2Command"/>
+					<ToolStripSeparator/>
+				</ToolStripMenuItem>
+			</MenuStrip>
+		</Implementation>
+	</Extensions>
+</Addin>
