@@ -7,7 +7,9 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
-namespace JointCode.AddIns.Resolving.Assets.Files
+using JointCode.AddIns.Resolving.Assets;
+
+namespace JointCode.AddIns.Parsing.Xml.Assets
 {
 	class DataFileXml : DataFileResolution
     { }

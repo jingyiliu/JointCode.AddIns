@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Windows.Forms;
 using JointCode.AddIns.Core;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns.ParentAddin
 {
     public class ToolStripButtonExtensionBuilder : IExtensionBuilder<ToolStripItem>
     {
         IAddinContext _adnContext;
-        public TypeId CommandType { get; set; }
+        public AddinTypeHandle CommandType { get; set; }
         public string Name { get; set; }
 
         public ToolStripItem BuildExtension(IAddinContext adnContext)
@@ -24,7 +25,7 @@ namespace JointCode.AddIns.ParentAddin
 
         void OnMenuClick(object sender, EventArgs e)
         {
-            var type = _adnContext.RuntimeSystem.GetType(CommandType);
+            var type = _adnContext.Addin.Runtime.GetType(CommandType);
             var command = (IParentCommand)Activator.CreateInstance(type);
             command.Run();
         }

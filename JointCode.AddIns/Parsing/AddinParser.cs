@@ -8,12 +8,12 @@
 //
 
 using JointCode.AddIns.Core.FileScanning;
-using JointCode.AddIns.Resolving.Assets;
+using JointCode.Common.Logging;
 
 namespace JointCode.AddIns.Parsing
 {
     abstract class AddinParser
     {
-        internal abstract bool TryParse(IMessageDialog dialog, FilePack filePack, out AddinResolution resolution);
+        internal abstract bool TryParse(/*ILogger logger, */ScanFilePack scanFilePack, out AddinManifest addinManifest);
     }
 }

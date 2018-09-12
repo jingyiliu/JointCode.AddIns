@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Forms;
 using JointCode.AddIns.Core;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns.ParentAddin
 {
@@ -10,7 +11,7 @@ namespace JointCode.AddIns.ParentAddin
 
         public string Name { get; set; }
         public string Tooltip { get; set; }
-        public TypeId CommandType { get; set; }
+        public AddinTypeHandle CommandType { get; set; }
 
         public ToolStripItem BuildExtension(IAddinContext adnContext)
         {
@@ -28,7 +29,7 @@ namespace JointCode.AddIns.ParentAddin
 
         void OnMenuClick(object sender, EventArgs e)
         {
-            var type = _adnContext.RuntimeSystem.GetType(CommandType);
+            var type = _adnContext.Addin.Runtime.GetType(CommandType);
             var command = (IParentCommand)Activator.CreateInstance(type);
             command.Run();
         }

@@ -7,15 +7,18 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
-using System;
-using System.Collections.Generic;
 using JointCode.AddIns.Core;
 using JointCode.AddIns.Core.FileScanning;
 using JointCode.AddIns.Metadata;
 using JointCode.AddIns.Metadata.Assets;
+using JointCode.AddIns.Parsing;
 using JointCode.AddIns.Resolving.Assets;
-using JointCode.Common;
 using JointCode.Common.Conversion;
+using JointCode.Common.Extensions;
+using System;
+using System.Collections.Generic;
+using JointCode.AddIns.Core.Storage;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns.Resolving
 {
@@ -41,44 +44,70 @@ namespace JointCode.AddIns.Resolving
         // 4. indirectly affected addins
         // then, decide how to register assets of these addins and whether they need resolution, according to each kind.
         // and finally, return the addin list that need to be resolved.
-        protected List<AddinResolution> RegisterExistingAssets(IMessageDialog dialog, ResolutionContext ctx, AddinCollision addinCollision, 
-            List<AddinResolution> adnResolutions)
+        protected List<AddinResolution> RegisterExistingAssets(ResolutionResult resolutionResult, ResolutionContext ctx, AddinCollision addinCollision)
         {
+            // =================================================
+            // 1. 首先确定 AddinStorage 中各个现有 addin 的状态：未受影响的、已更新的、间接受影响的
             // check whether there are updated addins.
             // and if there are any, mark their operation status as updated.
-            List<AddinIndexRecord> updatedAddins = null;
-            for (int i = 0; i < _indexManager.AddinCount; i++)
+            List<AddinRecord> updatedAddins = null;
+            for (int i = AddinStorage.AddinRecordCount - 1; i >= 0; i--)
             {
-                var addin = _indexManager.GetAddin(i);
-                var addinId = addin.AddinId;
+                var existingAddin = AddinStorage.Get(i);
+                var addinId = existingAddin.AddinId;
                 AddinResolution adnResolution;
-
+                // 如果 ResolutionContext 中已存在相同 guid 的插件，则表明这是一个更新的插件
                 if (!ctx.TryGetAddin(addinId, out adnResolution))
                     continue;
 
-                updatedAddins = updatedAddins ?? new List<AddinIndexRecord>();
-                updatedAddins.Add(addin);
-                addin.OperationStatus = AddinOperationStatus.Updated;
+                AddinStorage.Remove(existingAddin);
+                //AddinRelationManager.RemoveRelationMap(existingAddin);
+                //adnResolution.OperationStatus = AddinOperationStatus.Updated;
+
+                updatedAddins = updatedAddins ?? new List<AddinRecord>();
+                updatedAddins.Add(existingAddin);
             }
 
+            if (AddinStorage.AddinRecordCount == 0)
+                return null; // all addins are updated addins.
+
             // mark directly affected and indirectly affected addins.
+            List<AddinRecord> directlyAffectedAddins = null, indirectlyAffectedAddins = null;
             if (updatedAddins != null)
             {
-                var directlyAffectedAddins = _indexManager.TryGetAffectedAddins(updatedAddins);
+                directlyAffectedAddins = AddinRelationManager.TryGetAffectingAddins(updatedAddins);
                 if (directlyAffectedAddins != null)
                 {
-                    foreach (var directlyAffectedAddin in directlyAffectedAddins)
+                    indirectlyAffectedAddins = AddinRelationManager.TryGetAllAffectingAddins(directlyAffectedAddins);
+                    //if (indirectlyAffectedAddins != null)
+                    //{
+                    //    for (int i = indirectlyAffectedAddins.Count - 1; i >= 0; i--)
+                    //    {
+                    //        if (directlyAffectedAddins.Contains(indirectlyAffectedAddins[i]))
+                    //            indirectlyAffectedAddins.RemoveAt(i);
+                    //    }
+                    //}
+                }
+            }
+
+            // =================================================
+            // 2. 根据 AddinStorage 中各个现有 addin 的状态，将它们注册到 ResolutionContext
+            if (updatedAddins != null)
+            {
+                foreach (var updatedAddin in updatedAddins)
+                {
+                    var ebs = updatedAddin.GetAllExtensionBuilders();
+                    if (ebs != null)
                     {
-                        if (directlyAffectedAddin.OperationStatus != AddinOperationStatus.Updated)
-                            directlyAffectedAddin.OperationStatus = AddinOperationStatus.DirectlyAffected;
-                    }
-                    var indirectlyAffectedAddins = _indexManager.TryGetAllAffectedAddins(directlyAffectedAddins);
-                    if (indirectlyAffectedAddins != null)
-                    {
-                        foreach (var indirectlyAffectedAddin in indirectlyAffectedAddins)
+                        foreach (var eb in ebs)
                         {
-                            if (indirectlyAffectedAddin.OperationStatus == AddinOperationStatus.Unaffected)
-                                indirectlyAffectedAddin.OperationStatus = AddinOperationStatus.IndirectlyAffected;
+                            if (eb.ExtensionBuilderKind == ExtensionBuilderKind.Declared)
+                                // 将已更新插件的 ExtensionBuilderPath 映射注册到 context。
+                                // 因为在解析 Extension 时，是根据 ExtensionBuilderPath 查找 ExtensionBuilder 的，但对于 [directlyAffectedAddins 插件的 Extension] 来说，它们并不
+                                // 保存自身依赖的 updateAddins 的 ExtensionBuilder 的 ExtensionBuilderPath。
+                                // 所以，只能在解析前先将 updateAddins 的 ExtensionBuilder 的 ExtensionBuilderPath 注册到 context，后面解析 [directlyAffectedAddins 插件的 Extension]
+                                // 时，才能通过 uid 获得目标 ExtensionBuilder 的 path，继而找到 ExtensionBuilder
+                                ctx.RegisterExtensionBuilderPath(eb.Uid, eb.GetPath()); 
                         }
                     }
                 }
@@ -86,58 +115,81 @@ namespace JointCode.AddIns.Resolving
 
             List<AddinResolution> resolableAddins = null;
             // decide how to register assets of these addins and whether to resolve these addins according to their operation status.
-            for (int i = _indexManager.AddinCount - 1; i >= 0; i--)
+            if (directlyAffectedAddins != null)
             {
-                var addin = _indexManager.GetAddin(i);
-                var resolvableAddin = DoRegisterExistingAddin(dialog, ctx, addinCollision, addin, adnResolutions);
-                if (resolvableAddin != null)
+                foreach (var directlyAffectedAddin in directlyAffectedAddins)
                 {
+                    AddinStorage.Remove(directlyAffectedAddin);
+                    var resolvableAddin = DoRegisterExistingAddin(resolutionResult, ctx, addinCollision, directlyAffectedAddin, AddinOperationStatus.DirectlyAffected);
                     resolableAddins = resolableAddins ?? new AddinResolutionSet();
                     resolableAddins.Add(resolvableAddin);
                 }
             }
 
+            if (indirectlyAffectedAddins != null)
+            {
+                foreach (var indirectlyAffectedAddin in indirectlyAffectedAddins)
+                {
+                    AddinStorage.Remove(indirectlyAffectedAddin);
+                    var resolvableAddin = DoRegisterExistingAddin(resolutionResult, ctx, addinCollision, indirectlyAffectedAddin, AddinOperationStatus.IndirectlyAffected);
+                    resolableAddins = resolableAddins ?? new AddinResolutionSet();
+                    resolableAddins.Add(resolvableAddin);
+                }
+            }
+
+            // since the updated, directly affected and indirectly affected, they are all removed, so the rest is unaffected
+            for (int i = AddinStorage.AddinRecordCount - 1; i >= 0; i--)
+            {
+                var unaffectedAddin = AddinStorage.Get(i);
+                AddinStorage.Remove(unaffectedAddin);
+                var resolvableAddin = DoRegisterExistingAddin(resolutionResult, ctx, addinCollision, unaffectedAddin, AddinOperationStatus.Unaffected);
+                resolableAddins = resolableAddins ?? new AddinResolutionSet();
+                resolableAddins.Add(resolvableAddin);
+            }
+
             return resolableAddins;
         }
 
-        AddinResolution DoRegisterExistingAddin(IMessageDialog dialog, ResolutionContext ctx, AddinCollision addinCollision, 
-            AddinIndexRecord existingAddin, List<AddinResolution> adnResolutions)
+        // 根据 existingAddin 的状态，将其 Assets 注册到 ResolutionContext
+        AddinResolution DoRegisterExistingAddin(ResolutionResult resolutionResult, ResolutionContext ctx, AddinCollision addinCollision, 
+            AddinRecord existingAddin, AddinOperationStatus operationStatus)
         {
-            AddinBodyRecord addinBody;
-            if (!_bodyRepo.TryGet(existingAddin.Guid, out addinBody))
-                throw new InconsistentStateException();
+            //AddinRecord addinRecord;
+            //if (!AddinRelationManager.TryGetAddin(existingAddin.Guid, out addinRecord))
+            //    throw new InconsistentStateException();
 
-            _indexManager.RemoveAddin(existingAddin);
-            _bodyRepo.Remove(addinBody);
+            ////AddinRelationManager.RemoveAddin(existingAddin);
+            //AddinStorage.Remove(existingAddin);
 
-            if (existingAddin.OperationStatus == AddinOperationStatus.Updated)
-            {
-                var ebs = addinBody.GetAllExtensionBuilders();
-                if (ebs != null)
-                {
-                    foreach (var eb in ebs)
-                    {
-                        if (eb.ExtensionBuilderKind == ExtensionBuilderKind.Declared)
-                            ctx.RegisterExtensionBuilderPath(eb.Uid, eb.GetPath());
-                    }
-                }
-                return null;
-            }
+            //if (operationStatus == AddinOperationStatus.NewOrUpdated)
+            //{
+            //    var ebs = existingAddin.GetAllExtensionBuilders();
+            //    if (ebs != null)
+            //    {
+            //        foreach (var eb in ebs)
+            //        {
+            //            if (eb.ExtensionBuilderKind == ExtensionBuilderKind.Declared)
+            //                ctx.RegisterExtensionBuilderPath(eb.Uid, eb.GetPath());
+            //        }
+            //    }
+            //    return null;
+            //}
 
-            var adnResolution = FromPersistentObject(new AddinRecord { AddinBody = addinBody, AddinIndex = existingAddin });
-            TryRegisterAddin(dialog, ctx, adnResolution, addinCollision);
-            DoRegisterExistingAssets(dialog, ctx, adnResolution);
+            var adnResolution = FromPersistentObject(existingAddin, operationStatus);
+            TryRegisterAddin(resolutionResult, ctx, adnResolution, addinCollision);
+            DoRegisterExistingAssets(resolutionResult, ctx, adnResolution);
             // if the operation status of an addin not equals to unaffected (i.e, directly/indirectly affected addin), it need to 
             // be resolved, so we add it to the addin resolution list.
-            return existingAddin.OperationStatus == AddinOperationStatus.Unaffected ? null : adnResolution;
+            return adnResolution;
+            //return operationStatus == AddinOperationStatus.Unaffected ? null : adnResolution;
         }
 
-        void DoRegisterExistingAssets(IMessageDialog dialog, ResolutionContext ctx, AddinResolution adnResolution)
+        void DoRegisterExistingAssets(ResolutionResult resolutionResult, ResolutionContext ctx, AddinResolution adnResolution)
         {
             if (adnResolution.Assemblies != null)
             {
                 foreach (var asm in adnResolution.Assemblies)
-                    ctx.RegisterAssembly(dialog, asm);
+                    ctx.RegisterAssembly(resolutionResult, asm);
             }
             if (adnResolution.ExtensionPoints != null)
             {
@@ -162,11 +214,11 @@ namespace JointCode.AddIns.Resolving
             }
         }
 
-        protected bool TryRegisterAddin(IMessageDialog dialog, ResolutionContext ctx, AddinResolution adnResolution,
+        protected bool TryRegisterAddin(ResolutionResult resolutionResult, ResolutionContext ctx, AddinResolution adnResolution,
             AddinCollision addinCollision)
         {
             AddinResolution existingAddin;
-            if (ctx.TryRegisterAddin(dialog, adnResolution.AddinId, adnResolution, out existingAddin))
+            if (ctx.TryRegisterAddin(resolutionResult, adnResolution.AddinId, adnResolution, out existingAddin))
                 return true;
             var key = new AddinCollisionKey(existingAddin.Guid);
             addinCollision.Add(key, adnResolution, existingAddin);
@@ -179,15 +231,26 @@ namespace JointCode.AddIns.Resolving
         }
 
         // @return: whether there is collisions.
-        protected bool TryRegisterAssets(IMessageDialog dialog, ResolutionContext ctx, AddinResolution adnResolution,
+        protected bool TryRegisterAssets(ResolutionResult resolutionResult, ResolutionContext ctx, AddinResolution adnResolution,
            AddinCollision addinCollision)
         {
             var success = true;
             
             if (adnResolution.Assemblies != null)
             {
-            	foreach (var asm in adnResolution.Assemblies) 
-            		ctx.TryRegisterAssembly(dialog, asm);
+                for (int i = 0; i < adnResolution.Assemblies.Count; i++)
+                {
+                    var asm = adnResolution.Assemblies[i];
+                    if (ctx.TryRegisterAssembly(resolutionResult, asm))
+                        continue;
+                    // if the assembly loading (with mono.cecil) is failed, it's because this is not a valid managed assembly (might be a native library), 
+                    // just remove it from the assembly list, and add it to the data file list instead.
+                    adnResolution.Assemblies.RemoveAt(i);
+                    i -= 1;
+                    adnResolution.DataFiles.Add(new DataFileResolution{ FilePath = asm.AssemblyFile.FilePath });
+                }
+            	//foreach (var asm in adnResolution.Assemblies) 
+            	//	ctx.TryRegisterAssembly(resolutionResult, asm);
             }
 
             if (adnResolution.ExtensionPoints != null) 
@@ -195,9 +258,9 @@ namespace JointCode.AddIns.Resolving
                 foreach (var extensionPoint in adnResolution.ExtensionPoints)
                 {
                     ExtensionPointResolution existingExtensionPoint;
-                    if (!ctx.TryRegisterExtensionPoint(dialog, extensionPoint, out existingExtensionPoint))
+                    if (!ctx.TryRegisterExtensionPoint(resolutionResult, extensionPoint, out existingExtensionPoint))
                     {
-                        var key = new ExtensionPointCollisionKey(existingExtensionPoint.Id);
+                        var key = new ExtensionPointCollisionKey(existingExtensionPoint.Name);
                         addinCollision.Add(key, adnResolution, existingExtensionPoint.DeclaringAddin);
                         success = false;
                     }
@@ -213,9 +276,9 @@ namespace JointCode.AddIns.Resolving
                     if (extensionBuilder.ExtensionBuilderKind == ExtensionBuilderKind.Referenced)
                         continue;
                     ExtensionBuilderResolution existingExtensionBuilder;
-                    if (!ctx.TryRegisterExtensionBuilder(dialog, extensionBuilder, out existingExtensionBuilder))
+                    if (!ctx.TryRegisterExtensionBuilder(resolutionResult, extensionBuilder, out existingExtensionBuilder))
                     {
-                        var key = new ExtensionBuilderCollisionKey(existingExtensionBuilder.Id);
+                        var key = new ExtensionBuilderCollisionKey(existingExtensionBuilder.Name);
                         addinCollision.Add(key, adnResolution, existingExtensionBuilder.DeclaringAddin);
                         success = false;
                     }
@@ -228,7 +291,7 @@ namespace JointCode.AddIns.Resolving
                 foreach (var extension in extensions)
                 {
                     ExtensionResolution existingExtension;
-                    if (!ctx.TryRegisterExtension(dialog, extension, out existingExtension))
+                    if (!ctx.TryRegisterExtension(resolutionResult, extension, out existingExtension))
                     {
                         var key = new ExtensionCollisionKey(existingExtension.Head.Path);
                         addinCollision.Add(key, adnResolution, existingExtension.DeclaringAddin);
@@ -275,18 +338,22 @@ namespace JointCode.AddIns.Resolving
 
     partial class AddinResolver
     {
-        protected List<AddinResolution> TryParseAddins(IMessageDialog dialog, IEnumerable<FilePack> filePacks)
+        protected List<AddinResolution> TryParseAddins(INameConvention nameConvention, ResolutionResult resolutionResult, IEnumerable<ScanFilePack> filePacks)
         {
             var result = new List<AddinResolution>();
             foreach (var filePack in filePacks)
             {
                 foreach (var addinParser in _addinParsers)
                 {
-                    AddinResolution adnResolution;
-                    if (addinParser.TryParse(dialog, filePack, out adnResolution))
+                    AddinManifest addinManifest;
+                    if (addinParser.TryParse(filePack, out addinManifest))
                     {
-                        result.Add(adnResolution);
-                        break;
+                        AddinResolution adnResolution;
+                        if (addinManifest.Introspect(nameConvention, resolutionResult) && addinManifest.TryParse(resolutionResult, out adnResolution))
+                        {
+                            result.Add(adnResolution);
+                            break;
+                        }
                     }
                 }
             }
@@ -300,36 +367,47 @@ namespace JointCode.AddIns.Resolving
         // 2. an addin (a) references assemblies provided by another addin (b), and the addin (b) references assemblies provided by the addin (a).
         // 3. an addin (a) provides an extension for another addin (b), and the addin (b) provides an extension for addin (a).
         // no addins with [circular references] or [circular dependencies] will be returned.
-        protected List<AddinResolution> TryResolveAddins(IMessageDialog dialog, ConvertionManager convertionManager, 
+        protected List<AddinResolution> TryResolveAddins(ResolutionResult resolutionResult, ConvertionManager convertionManager, 
             ResolutionContext ctx, List<AddinResolution> adnResolutions)
         {
             var result = new List<AddinResolution>();
-            int loop = 0, retryTimes = 0;
+            int index = 0, retryTimes = 0;
+
             while (true)
             {
-                var idx = loop % adnResolutions.Count;
-                var adnResolution = adnResolutions[idx];
-                var resolutionStatus = adnResolution.Resolve(dialog, convertionManager, ctx);
+                if (index >= adnResolutions.Count)
+                    index = 0;
+                var adnResolution = adnResolutions[index];
+
+                var resolutionStatus = adnResolution.Resolve(resolutionResult, convertionManager, ctx);
+
                 if (resolutionStatus.IsFailed())
                 {
                     retryTimes = 0;
+                    index += 1;
                     RemoveInvalidAddinsRecursively(ctx, adnResolutions, adnResolution);
-                    dialog.AddError("");
+
+                    if (adnResolution.AddinHeader.Name.IsNullOrWhiteSpace())
+                        resolutionResult.AddError("Failed to resolve addin [" + adnResolution.AddinId.Guid + "]");
+                    else
+                        resolutionResult.AddError("Failed to resolve addin [" + adnResolution.AddinHeader.Name + "] [" + adnResolution.AddinId.Guid + "]");
                 }
                 else if (resolutionStatus.IsPending()) // refers to other addins that has not been resolved
                 {
                     retryTimes += 1;
+                    index += 1;
                 }
                 else if (resolutionStatus.IsSuccess())
                 {
                     retryTimes = 0;
-                    adnResolutions.RemoveAt(idx);
+                    adnResolutions.RemoveAt(index);
                     result.Add(adnResolution);
                 }
-                loop += 1;
+
                 if (adnResolutions.Count == 0 || retryTimes > adnResolutions.Count)
                     break;
             }
+
             return result; 
         }
 
@@ -370,9 +448,11 @@ namespace JointCode.AddIns.Resolving
         {
             if (!adnResolutions.Remove(adnResolution))
                 return;
+
             UnregisterAssets(ctx, adnResolution);
             UnregisterAddin(ctx, adnResolution);
-            _indexManager.AddInvalidAddinFilePack(NewAddinResolution.ToAddinFilePack(adnResolution));
+            AddinStorage.TryRemove(adnResolution.Guid);
+            AddinStorage.AddInvalidAddinFilePack(AddinResolution.ToAddinFilePack(adnResolution));
 
             for (int i = 0; i < adnResolutions.Count; i++)
             {
@@ -386,7 +466,9 @@ namespace JointCode.AddIns.Resolving
         {
             if (!adnResolutions.Remove(adnResolution))
                 return;
-            _indexManager.AddInvalidAddinFilePack(NewAddinResolution.ToAddinFilePack(adnResolution));
+
+            AddinStorage.TryRemove(adnResolution.Guid);
+            AddinStorage.AddInvalidAddinFilePack(AddinResolution.ToAddinFilePack(adnResolution));
 
             for (int i = 0; i < adnResolutions.Count; i++)
             {
@@ -396,50 +478,49 @@ namespace JointCode.AddIns.Resolving
             }
         }
 
-        protected bool ResolutionFailed(IMessageDialog dialog, ResolutionContext ctx, List<AddinResolution> adnResolutions)
+        protected bool ResolutionFailed(ResolutionResult resolutionResult, ResolutionContext ctx, List<AddinResolution> adnResolutions)
         {
             if (adnResolutions.Count > 0)
                 return false;
             ctx.Dispose();
-            DoPersist();
-            if (dialog.HasMessage)
-                dialog.Show();
+            PersistAddinStorage(resolutionResult);
             return true;
         }
 
-        void DoPersist()
+        protected void PersistAddinStorage(ResolutionResult resolutionResult)
         {
-            if (!_indexManager.Changed && !_bodyRepo.Changed)
+            if (!AddinStorage.Changed)
                 return;
 
-            var storage = _indexManager.Storage;
-            storage.StartTransaction();
-            try
-            {
-                _indexManager.Write();
-                _bodyRepo.Flush();
-                storage.CommitTransaction();
-            }
-            catch
-            {
-                storage.RollbackTransaction();
-            }
+            //var storage = AddinRelationManager.Storage;
+            //storage.StartTransaction();
+            //try
+            //{
+            //    AddinRelationManager.Write();
+            //    AddinStorage.Flush();
+            //    storage.CommitTransaction();
+            //}
+            //catch
+            //{
+            //    storage.RollbackTransaction();
+            //}
+
+            var result = AddinStorage.Write();
+            if (!result)
+                resolutionResult.AddError("Failed to write to the addin storage file!");
         }
     }
 
     partial class AddinResolver
     {
         #region FromPersistentObject
-        static AddinResolution FromPersistentObject(AddinRecord addinRecord)
+        static AddinResolution FromPersistentObject(AddinRecord addinRecord, AddinOperationStatus operationStatus)
         {
-            var addinIndex = addinRecord.AddinIndex;
-            var addinBody = addinRecord.AddinBody;
-
             AddinResolution result;
-            switch (addinIndex.OperationStatus)
+            switch (operationStatus)
             {
                 case AddinOperationStatus.Unaffected:
-                    result = new UnaffectedAddinResolution();
+                    result = new UnaffectedAddinResolution(addinRecord);
                     break;
                 case AddinOperationStatus.IndirectlyAffected:
                     result = new IndirectlyAffectedAddinResolution(addinRecord);
@@ -451,31 +532,31 @@ namespace JointCode.AddIns.Resolving
                     throw new InvalidOperationException();
             }
 
-            result.AddinHeader = addinIndex.AddinHeader;
-            result.ManifestFile = addinIndex.ManifestFile;
-            result.RunningStatus = addinIndex.RunningStatus;
+            result.AddinHeader = addinRecord.AddinHeader;
+            result.ManifestFile = addinRecord.ManifestFile;
+            result.Enabled = addinRecord.Enabled;
 
-            #region AddinIndexRecord
-            if (addinIndex.AssemblyFiles != null)
+            #region AddinRecord
+            if (addinRecord.AssemblyFiles != null)
             {
                 result.Assemblies = new List<AssemblyResolution>();
-                foreach (var assemblyFile in addinIndex.AssemblyFiles)
+                foreach (var assemblyFile in addinRecord.AssemblyFiles)
                     result.Assemblies.Add(AssemblyResolution.CreateAddinAssembly(result, assemblyFile));
             }
             //if (addinIndex.ReferencedAssemblies != null) { }
             //if (addinIndex.ExtendedAddins != null) { } 
             #endregion
 
-            switch (addinIndex.OperationStatus)
+            switch (operationStatus)
             {
                 case AddinOperationStatus.Unaffected:
-                    FromUnaffectedPersistentObject(result, addinBody);
+                    FromUnaffectedPersistentObject(result, addinRecord);
                     break;
                 case AddinOperationStatus.IndirectlyAffected:
-                    FromIndirectlyAffectedPersistentObject(result, addinBody);
+                    FromIndirectlyAffectedPersistentObject(result, addinRecord);
                     break;
                 case AddinOperationStatus.DirectlyAffected:
-                    FromDirectlyAffectedPersistentObject(result, addinBody);
+                    FromDirectlyAffectedPersistentObject(result, addinRecord);
                     break;
             }
 
@@ -483,26 +564,26 @@ namespace JointCode.AddIns.Resolving
         }
 
         #region DirectlyAffected
-        static void FromDirectlyAffectedPersistentObject(AddinResolution result, AddinBodyRecord addinBody)
+        static void FromDirectlyAffectedPersistentObject(AddinResolution result, AddinRecord addinExtension)
         {
-            if (addinBody.ExtensionPoints != null)
+            if (addinExtension.ExtensionPoints != null)
             {
                 result.ExtensionPoints = new List<ExtensionPointResolution>();
-                foreach (var extensionPoint in addinBody.ExtensionPoints)
+                foreach (var extensionPoint in addinExtension.ExtensionPoints)
                     result.ExtensionPoints.Add(FromDirectlyAffectedPersistentObject(result, extensionPoint));
             }
 
-            if (addinBody.ExtensionBuilderGroups != null)
+            if (addinExtension.ExtensionBuilderGroups != null)
             {
                 result.ExtensionBuilderGroups = new List<ExtensionBuilderResolutionGroup>();
-                foreach (var extensionBuilderGroup in addinBody.ExtensionBuilderGroups)
+                foreach (var extensionBuilderGroup in addinExtension.ExtensionBuilderGroups)
                     result.ExtensionBuilderGroups.Add(FromDirectlyAffectedPersistentObject(result, extensionBuilderGroup));
             }
 
-            if (addinBody.ExtensionGroups != null)
+            if (addinExtension.ExtensionGroups != null)
             {
                 result.ExtensionGroups = new List<ExtensionResolutionGroup>();
-                foreach (var extensionGroup in addinBody.ExtensionGroups)
+                foreach (var extensionGroup in addinExtension.ExtensionGroups)
                     result.ExtensionGroups.Add(FromDirectlyAffectedPersistentObject(result, extensionGroup));
             } 
         }
@@ -511,7 +592,7 @@ namespace JointCode.AddIns.Resolving
         {
             var result = new DirectlyAffectedExtensionPointResolution(addin, item)
             {
-                Id = item.Id,
+                Name = item.Name,
                 TypeName = item.TypeName,
                 Description = item.Description
             };
@@ -547,9 +628,9 @@ namespace JointCode.AddIns.Resolving
             {
                 result = new DirectlyAffectedDeclaredExtensionBuilderResolution(addin, item)
                 {
-                    Id = item.Id,
+                    Name = item.Name,
                     ParentPath = item.ParentPath,
-                    ExtensionPointId = item.ExtensionPointId,
+                    ExtensionPointName = item.ExtensionPointName,
                     TypeName = item.TypeName,
                     Description = item.Description, 
                 };
@@ -558,9 +639,9 @@ namespace JointCode.AddIns.Resolving
             {
                 result = new DirectlyAffectedReferencedExtensionBuilderResolution(addin, item)
                 {
-                    Id = item.Id,
+                    Name = item.Name,
                     ParentPath = item.ParentPath,
-                    ExtensionPointId = item.ExtensionPointId,
+                    ExtensionPointName = item.ExtensionPointName,
                 };
             }
             if (item.Children != null)
@@ -599,14 +680,19 @@ namespace JointCode.AddIns.Resolving
                 ParentPath = item.Head.ParentPath
             };
 
-            var data = new ExtensionDataResolution();
-            if (item.Data.Items != null)
+            DirectlyAffectedExtensionResolution result;
+            if (item.Data != null && item.Data.Items != null)
             {
+                var data = new ExtensionDataResolution();
                 foreach (var kv in item.Data.Items)
-                    data.AddSerializableHolder(kv.Key, kv.Value);
+                    data.AddDataHolder(kv.Key, kv.Value);
+                result = new DirectlyAffectedExtensionResolution(addin) { Head = head, Data = data };
             }
-
-            var result = new DirectlyAffectedExtensionResolution(addin) { Head = head, Data = data };
+            else
+            {
+                result = new DirectlyAffectedExtensionResolution(addin) { Head = head };
+            }
+            
             if (item.Children != null)
             {
                 foreach (var child in item.Children)
@@ -620,26 +706,26 @@ namespace JointCode.AddIns.Resolving
         #endregion
 
         #region IndirectlyAffected
-        static void FromIndirectlyAffectedPersistentObject(AddinResolution result, AddinBodyRecord addinBody)
+        static void FromIndirectlyAffectedPersistentObject(AddinResolution result, AddinRecord addinExtension)
         {
-            if (addinBody.ExtensionPoints != null)
+            if (addinExtension.ExtensionPoints != null)
             {
                 result.ExtensionPoints = new List<ExtensionPointResolution>();
-                foreach (var extensionPoint in addinBody.ExtensionPoints)
+                foreach (var extensionPoint in addinExtension.ExtensionPoints)
                     result.ExtensionPoints.Add(FromIndirectlyAffectedPersistentObject(result, extensionPoint));
             }
 
-            if (addinBody.ExtensionBuilderGroups != null)
+            if (addinExtension.ExtensionBuilderGroups != null)
             {
                 result.ExtensionBuilderGroups = new List<ExtensionBuilderResolutionGroup>();
-                foreach (var extensionBuilderGroup in addinBody.ExtensionBuilderGroups)
+                foreach (var extensionBuilderGroup in addinExtension.ExtensionBuilderGroups)
                     result.ExtensionBuilderGroups.Add(FromIndirectlyAffectedPersistentObject(result, extensionBuilderGroup));
             }
 
-            if (addinBody.ExtensionGroups != null)
+            if (addinExtension.ExtensionGroups != null)
             {
                 result.ExtensionGroups = new List<ExtensionResolutionGroup>();
-                foreach (var extensionGroup in addinBody.ExtensionGroups)
+                foreach (var extensionGroup in addinExtension.ExtensionGroups)
                     result.ExtensionGroups.Add(FromIndirectlyAffectedPersistentObject(result, extensionGroup));
             }
         }
@@ -648,7 +734,7 @@ namespace JointCode.AddIns.Resolving
         {
             var result = new IndirectlyAffectedExtensionPointResolution(addin, item)
             {
-                Id = item.Id,
+                Name = item.Name,
                 TypeName = item.TypeName,
                 Description = item.Description
             };
@@ -684,9 +770,9 @@ namespace JointCode.AddIns.Resolving
             {
                 result = new IndirectlyAffectedDeclaredExtensionBuilderResolution(addin, item)
                 {
-                    Id = item.Id,
+                    Name = item.Name,
                     ParentPath = item.ParentPath,
-                    ExtensionPointId = item.ExtensionPointId,
+                    ExtensionPointName = item.ExtensionPointName,
                     TypeName = item.TypeName,
                     Description = item.Description
                 };
@@ -695,9 +781,9 @@ namespace JointCode.AddIns.Resolving
             {
                 result = new IndirectlyAffectedReferencedExtensionBuilderResolution(addin, item)
                 {
-                    Id = item.Id,
+                    Name = item.Name,
                     ParentPath = item.ParentPath,
-                    ExtensionPointId = item.ExtensionPointId,
+                    ExtensionPointName = item.ExtensionPointName,
                 };
             }
             if (item.Children != null)
@@ -736,14 +822,19 @@ namespace JointCode.AddIns.Resolving
                 ParentPath = item.Head.ParentPath
             };
 
-            var data = new ExtensionDataResolution();
-            if (item.Data.Items != null)
+            IndirectlyAffectedExtensionResolution result;
+            if (item.Data != null && item.Data.Items != null)
             {
+                var data = new ExtensionDataResolution();
                 foreach (var kv in item.Data.Items)
-                    data.AddSerializableHolder(kv.Key, kv.Value);
+                    data.AddDataHolder(kv.Key, kv.Value);
+                result = new IndirectlyAffectedExtensionResolution(addin, item) { Head = head, Data = data };
             }
-
-            var result = new IndirectlyAffectedExtensionResolution(addin, item) { Head = head, Data = data };
+            else
+            {
+                result = new IndirectlyAffectedExtensionResolution(addin, item) { Head = head };
+            }
+            
             if (item.Children != null)
             {
                 foreach (var child in item.Children)
@@ -757,26 +848,26 @@ namespace JointCode.AddIns.Resolving
         #endregion
 
         #region Unaffected
-        static void FromUnaffectedPersistentObject(AddinResolution result, AddinBodyRecord addinBody)
+        static void FromUnaffectedPersistentObject(AddinResolution result, AddinRecord addinExtension)
         {
-            if (addinBody.ExtensionPoints != null)
+            if (addinExtension.ExtensionPoints != null)
             {
                 result.ExtensionPoints = new List<ExtensionPointResolution>();
-                foreach (var extensionPoint in addinBody.ExtensionPoints)
+                foreach (var extensionPoint in addinExtension.ExtensionPoints)
                     result.ExtensionPoints.Add(FromUnaffectedPersistentObject(result, extensionPoint));
             }
 
-            if (addinBody.ExtensionBuilderGroups != null)
+            if (addinExtension.ExtensionBuilderGroups != null)
             {
                 result.ExtensionBuilderGroups = new List<ExtensionBuilderResolutionGroup>();
-                foreach (var extensionBuilderGroup in addinBody.ExtensionBuilderGroups)
+                foreach (var extensionBuilderGroup in addinExtension.ExtensionBuilderGroups)
                     result.ExtensionBuilderGroups.Add(FromUnaffectedPersistentObject(result, extensionBuilderGroup));
             }
 
-            if (addinBody.ExtensionGroups != null)
+            if (addinExtension.ExtensionGroups != null)
             {
                 result.ExtensionGroups = new List<ExtensionResolutionGroup>();
-                foreach (var extensionGroup in addinBody.ExtensionGroups)
+                foreach (var extensionGroup in addinExtension.ExtensionGroups)
                     result.ExtensionGroups.Add(FromUnaffectedPersistentObject(result, extensionGroup));
             }
         }
@@ -785,7 +876,7 @@ namespace JointCode.AddIns.Resolving
         {
             var result = new UnaffectedExtensionPointResolution(addin, item)
             {
-                Id = item.Id,
+                Name = item.Name,
                 TypeName = item.TypeName,
                 Description = item.Description
             };
@@ -821,9 +912,9 @@ namespace JointCode.AddIns.Resolving
             {
                 result = new UnaffectedDeclaredExtensionBuilderResolution(addin, item)
                 {
-                    Id = item.Id,
+                    Name = item.Name,
                     ParentPath = item.ParentPath,
-                    ExtensionPointId = item.ExtensionPointId,
+                    ExtensionPointName = item.ExtensionPointName,
                     TypeName = item.TypeName,
                     Description = item.Description
                 };
@@ -832,9 +923,9 @@ namespace JointCode.AddIns.Resolving
             {
                 result = new UnaffectedReferencedExtensionBuilderResolution(addin, item)
                 {
-                    Id = item.Id,
+                    Name = item.Name,
                     ParentPath = item.ParentPath,
-                    ExtensionPointId = item.ExtensionPointId,
+                    ExtensionPointName = item.ExtensionPointName,
                 };
             }
             if (item.Children != null)
@@ -873,14 +964,19 @@ namespace JointCode.AddIns.Resolving
                 ParentPath = item.Head.ParentPath
             };
 
-            var data = new ExtensionDataResolution();
-            if (item.Data.Items != null)
+            UnaffectedExtensionResolution result;
+            if (item.Data != null && item.Data.Items != null)
             {
+                var data = new ExtensionDataResolution();
                 foreach (var kv in item.Data.Items)
-                    data.AddSerializableHolder(kv.Key, kv.Value);
+                    data.AddDataHolder(kv.Key, kv.Value);
+                result = new UnaffectedExtensionResolution(addin, item) {Head = head, Data = data};
             }
-
-            var result = new UnaffectedExtensionResolution(addin) { Head = head, Data = data };
+            else
+            {
+                result = new UnaffectedExtensionResolution(addin, item) {Head = head};
+            }
+            
             if (item.Children != null)
             {
                 foreach (var child in item.Children)
@@ -895,7 +991,18 @@ namespace JointCode.AddIns.Resolving
 
         #endregion
 
-        protected void PersistAddinRecords(ResolutionContext ctx, List<AddinResolution> adnResolutions)
+        protected void StoreUnresolvableAddins(List<AddinResolution> adnResolutions)
+        {
+            for (int i = 0; i < adnResolutions.Count; i++)
+            {
+                var adnResolution = adnResolutions[i];
+                AddinStorage.TryRemove(adnResolution.Guid);
+                var filePack = AddinResolution.ToAddinFilePack(adnResolution);
+                AddinStorage.AddInvalidAddinFilePack(filePack);
+            }
+        }
+
+        protected void StoreResolvedAddins(ResolutionResult resolutionResult, ResolutionContext ctx, List<AddinResolution> adnResolutions)
         {
             // assign assembly uid first, because we needs to assign the same uid for same assembly if there is any 
             // pre-existing addins that provides them.
@@ -907,27 +1014,25 @@ namespace JointCode.AddIns.Resolving
             {
                 var adnResolution = adnResolutions[i];
                 var adnRecord = adnResolution.ToRecord();
-                _bodyRepo.Add(adnRecord.AddinBody);
-                // the addin might has been resolved fail the last time.
-                _indexManager.RemoveInvalidAddinFilePack(adnRecord.AddinIndex.AddinDirectory);
-                _indexManager.AddAddin(adnRecord.AddinIndex);
+                // the addin might have been failed to resolve at the last time, if that is true, it will be in the invalid addin list, 
+                // so we need to remove it from the invalid file packs, if it is there.
+                AddinStorage.RemoveInvalidAddinFilePack(adnRecord.BaseDirectory);
+                AddinStorage.Add(adnRecord);
             }
-
-            DoPersist();
         }
 
         static void AssignUidForAssemblySet(AssemblyResolutionSet assemblySet)
         {
-            var existingUid = UidProvider.InvalidAssemblyUid;
+            var existingUid = UidStorage.InvalidAssemblyUid;
             foreach (var assembly in assemblySet)
             {
-                if (assembly.Uid == UidProvider.InvalidAssemblyUid)
+                if (assembly.Uid == UidStorage.InvalidAssemblyUid)
                     continue;
-                if (existingUid != UidProvider.InvalidAssemblyUid && existingUid != assembly.Uid)
+                if (existingUid != UidStorage.InvalidAssemblyUid && existingUid != assembly.Uid)
                     throw new Exception();
                 existingUid = assembly.Uid;
             }
-            existingUid = existingUid != UidProvider.InvalidAssemblyUid ? existingUid : IndexManager.GetNextAssemblyUid();
+            existingUid = existingUid != UidStorage.InvalidAssemblyUid ? existingUid : UidStorage.GetNextAssemblyUid();
             foreach (var assembly in assemblySet)
                 assembly.Uid = existingUid;
         }

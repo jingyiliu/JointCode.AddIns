@@ -1,0 +1,14 @@
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\RootAddin\addin.manifest
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\RootAddin\JointCode.AddIns.RootAddin.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\RootAddin\JointCode.AddIns.RootAddin.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.csproj.CoreCompileInputs.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.csprojResolveAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\RootAddin\addin.manifest
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\RootAddin\JointCode.AddIns.RootAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\RootAddin\JointCode.AddIns.RootAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.RootAddin\obj\Debug\JointCode.AddIns.RootAddin.csprojAssemblyReference.cache

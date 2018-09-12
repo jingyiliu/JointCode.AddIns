@@ -13,7 +13,8 @@ namespace JointCode.AddIns.Core
 {
     static class SysConstants
     {
-    	internal const string PathSeparator = "/";
+    	internal const char PathSeparator = '/';
+        internal const string PathSeparatorString = "/";
         internal static readonly byte[] EmptyBytes = new byte[0];
     }
 }

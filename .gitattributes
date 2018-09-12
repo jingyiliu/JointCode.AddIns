@@ -1,2 +1,15 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+##############################
+## Ignored Folders          ##
+##############################
+.vs
+bin
+obj
+packages
+ 
+##############################
+## Ignored Files            ##
+##############################
+*.txt

@@ -1,0 +1,14 @@
+<Addin>
+  <Header>
+    <Guid>33579248-B58B-427C-BE39-25B22A267778</Guid>
+    <FriendName>Schema child addin</FriendName>
+  </Header>
+
+  <Extensions>
+    <MenuStrip path="MenuStrip/Options">
+      <ToolStripSeparator />
+      <ToolStripMenuItem Id="SchemaChild1" Name="SchemaChild1" Tooltip="This is SchemaChild1" CommandType="JointCode.AddIns.RootAddin.SchemaChild1Command"/>
+    </MenuStrip>
+  </Extensions>
+
+</Addin>

@@ -1,0 +1,10 @@
+<Addin guid="33579248-B56B-427C-BE39-25B22A267778" name="SchemaChildAddin">
+
+  <Extensions>
+    <MenuStrip path="MenuStrip/Options">
+      <ToolStripSeparator />
+      <ToolStripMenuItem Id="SchemaChild1" Name="SchemaChild1" Tooltip="This is SchemaChild1" CommandType="JointCode.AddIns.SchemaChildAddin.SchemaChild1Command"/>
+    </MenuStrip>
+  </Extensions>
+
+</Addin>

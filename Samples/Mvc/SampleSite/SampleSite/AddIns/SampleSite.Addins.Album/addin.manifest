@@ -1,0 +1,10 @@
+<Addin guid="22579248-B58B-427C-BE39-25B29A267327" name="Album">
+
+	<Extensions>
+    <MvcMenuStrip>
+      <MvcMenuItem Id="Album" Url="/Album/Album/Index" Text="相册" Visible="true"/>
+      <MvcMenuItem Id="ManageAlbum" Url="/Album/ManageAlbum/Index" Text="相册管理" Visible="true"/>
+    </MvcMenuStrip>
+	</Extensions>
+
+</Addin>

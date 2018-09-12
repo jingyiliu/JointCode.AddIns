@@ -12,6 +12,8 @@ using JointCode.AddIns.Resolving.Assets;
 
 namespace JointCode.AddIns.Resolving
 {
+    // 表示由于各种原因导致冲突的插件集合
+    // 例如，两个不同的插件具有相同的 Guid、ExtensionPointName、ExtensionBuilder 路径，等等
     class AddinCollision
     {
         readonly Dictionary<CollisionKey, List<AddinResolution>> _key2CollisionItems = new Dictionary<CollisionKey, List<AddinResolution>>();

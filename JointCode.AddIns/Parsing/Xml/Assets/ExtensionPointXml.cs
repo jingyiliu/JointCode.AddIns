@@ -9,16 +9,17 @@
 
 using System.Collections.Generic;
 using JointCode.AddIns.Core;
+using JointCode.AddIns.Resolving;
 using JointCode.AddIns.Resolving.Assets;
 using JointCode.Common.Extensions;
 
 namespace JointCode.AddIns.Parsing.Xml.Assets
 {
-    class ExtensionPointXml
+    abstract class BaseExtensionPointXml
     {
         protected List<ExtensionBuilderXml> _children;
 
-        internal string Id { get; set; }
+        internal string Name { get; set; }
         internal string Description { get; set; }
         // The type name of the IExtensionPoint
         internal string TypeName { get; set; }
@@ -31,44 +32,33 @@ namespace JointCode.AddIns.Parsing.Xml.Assets
             _children.Add(item);
         }
 
-        internal virtual bool Introspect(IMessageDialog dialog)
-        {
-            var result = true;
-            if (TypeName.IsNullOrWhiteSpace())
-            {
-                dialog.AddError("An extension point must at least provide a type name!");
-                result = false;
-            }
-            return result | DoIntrospect(dialog, "extension point");
-        }
-        
-        protected bool DoIntrospect(IMessageDialog dialog, string name)
+        protected bool DoIntrospect(INameConvention nameConvention, ResolutionResult resolutionResult, string name)
 		{
         	var result = true;
-            if (Id.IsNullOrWhiteSpace())
+            if (Name.IsNullOrWhiteSpace())
             {
-                dialog.AddError("An " + name + " must at least have an id to be identified!");
+                resolutionResult.AddError("An " + name + " must at least have an name to be identified!");
                 result = false;
             }
-        	if (Id.Contains(SysConstants.PathSeparator))
+        	if (Name.Contains(SysConstants.PathSeparatorString))
             {
-                dialog.AddError("An " + name + " id can not contain [/]!");
+                resolutionResult.AddError("An " + name + " name can not contain [/]!");
                 result = false;
             }
 
             if (_children != null)
             {
                 foreach (var child in _children)
-                    result &= child.Introspect(dialog);
+                    result &= child.Introspect(nameConvention, resolutionResult);
             }
             return result;
 		}
 		
-		internal bool TryParse(IMessageDialog dialog, AddinResolution addin, out ExtensionPointResolution result)
+		internal bool TryParse(ResolutionResult resolutionResult, AddinResolution addin, out ExtensionPointResolution result)
 		{
-            result = new NewExtensionPointResolution(addin)
+            result = new NewOrUpdatedExtensionPointResolution(addin)
 		    {
-		        Id = Id,
+		        Name = Name,
 		        TypeName = TypeName,
 		        Description = Description
 		    };
@@ -77,14 +67,28 @@ namespace JointCode.AddIns.Parsing.Xml.Assets
                 foreach (var child in _children)
                 {
                     ExtensionBuilderResolution eb;
-                    if (!child.TryParse(dialog, addin, result, out eb))
+                    if (!child.TryParse(resolutionResult, addin, result, out eb))
                         return false;
-                    eb.ParentPath = Id;
+                    eb.ParentPath = Name;
                     eb.ParentIsExtensionPoint = true;
                     result.AddChild(eb);
                 }
 		    }
 		    return true;
 		}
+    }
+
+    class ExtensionPointXml : BaseExtensionPointXml
+    {
+        internal bool Introspect(INameConvention nameConvention, ResolutionResult resolutionResult)
+        {
+            var result = true;
+            if (TypeName.IsNullOrWhiteSpace())
+            {
+                resolutionResult.AddError("An extension point must at least provide a type name!");
+                result = false;
+            }
+            return result | DoIntrospect(nameConvention, resolutionResult, "extension point");
+        }
     }
 }

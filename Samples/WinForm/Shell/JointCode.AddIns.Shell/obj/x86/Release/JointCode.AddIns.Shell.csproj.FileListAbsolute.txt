@@ -1,0 +1,15 @@
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.Shell.exe.config
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.Shell.exe
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.Shell.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.csprojResolveAssemblyReference.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.csproj.CoreCompileInputs.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.exe
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.Shell.exe.config
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.Shell.exe
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.Shell.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.csproj.CopyComplete
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.exe
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell\obj\x86\Release\JointCode.AddIns.Shell.pdb

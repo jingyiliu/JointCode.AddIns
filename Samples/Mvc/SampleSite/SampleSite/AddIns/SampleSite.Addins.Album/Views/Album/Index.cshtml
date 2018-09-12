@@ -1,0 +1,26 @@
+﻿@using System.Web.Mvc
+@using System.Web.Mvc.Ajax
+@using System.Web.Mvc.Html
+@model List<SampleSite.Addins.Album.Models.AppAddinModel>
+@{
+    ViewBag.Title = "Plugin Demo App - Plugin Album";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    //var model = ViewData["AppAddinModel"] as List<SampleSite.Addins.Album.Models.AppAddinModel>;
+}
+<h3>Addin: Album</h3>
+<ul class="pladmin-pluginlist">
+    @foreach (SampleSite.Addins.Album.Models.AppAddinModel plugin in Model)
+    {
+    <li id="@plugin.Id" class="customFont">
+        <h2>@plugin.Name</h2>
+        <p>@plugin.Description</p>
+        <strong>assembly info</strong><br />
+        @plugin.AssemblyInfo.Name - @plugin.AssemblyInfo.Version - @plugin.AssemblyInfo.Date------------
+    </li>
+    }
+</ul>
+
+
+@section css {
+    <link type="text/css" rel="stylesheet" href="~/AddIns/SampleSite.Addins.Album/Content/Site.css" />
+}

@@ -1,0 +1,15 @@
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ChildAddin\addin.manifest
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ChildAddin\JointCode.AddIns.ChildAddin.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ChildAddin\JointCode.AddIns.ChildAddin.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.csprojResolveAssemblyReference.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.csproj.CoreCompileInputs.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ChildAddin\addin.manifest
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ChildAddin\JointCode.AddIns.ChildAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ChildAddin\JointCode.AddIns.ChildAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.csproj.CopyComplete
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ChildAddin\obj\Release\JointCode.AddIns.ChildAddin.pdb

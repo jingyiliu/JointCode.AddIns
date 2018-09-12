@@ -15,7 +15,8 @@ namespace JointCode.AddIns.Resolving.Assets
     abstract class Resolvable
     {
         readonly AddinResolution _declaringAddin;
-		
+        protected ResolutionStatus _resolutionStatus = ResolutionStatus.Pending;
+
         protected Resolvable(AddinResolution declaringAddin) { _declaringAddin = declaringAddin; }
 		
         /// <summary>
@@ -24,7 +25,23 @@ namespace JointCode.AddIns.Resolving.Assets
         /// </summary>
         internal AddinResolution DeclaringAddin { get { return _declaringAddin; } }
 
-        internal abstract ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager, ResolutionContext ctx);
+        // 在执行子对象的解析时，利用此属性来判断父对象的解析状态（例如 Extension 和 ExtensionBuilder），而不直接执行解析。因为直接解析父对象时，如果父子对象之间存在循环依赖，则会造成无限循环解析
+        /// <summary>
+        /// get the resolution status without doing the resolution
+        /// </summary>
+        internal ResolutionStatus ResolutionStatus { get { return _resolutionStatus; } }
+
+        internal ResolutionStatus Resolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx)
+        {
+            if (_resolutionStatus.IsFailed())
+                return ResolutionStatus.Failed;
+            if (_resolutionStatus.IsSuccess())
+                return ResolutionStatus.Success;
+            _resolutionStatus = DoResolve(resolutionResult, convertionManager, ctx);
+            return _resolutionStatus;
+        }
+
+        protected abstract ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx);
 
         // @returns ResolutionStatus.Success when the type is:
         // 1. provided by the runtime (gac), and therefore no need to resolve (it is always there).
@@ -45,5 +62,11 @@ namespace JointCode.AddIns.Resolving.Assets
                 ? ResolutionStatus.Success 
                 : otherAsset.DeclaringAddin.ResolutionStatus;
         }
+    }
+
+    abstract class TypeConstrainedResolvable : Resolvable
+    {
+        protected TypeConstrainedResolvable(AddinResolution declaringAddin) : base(declaringAddin) { }
+        internal TypeResolution Type { get; set; }
     }
 }

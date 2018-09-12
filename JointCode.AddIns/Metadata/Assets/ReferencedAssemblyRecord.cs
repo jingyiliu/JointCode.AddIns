@@ -8,40 +8,41 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using JointCode.Common;
 using JointCode.Common.IO;
 
 namespace JointCode.AddIns.Metadata.Assets
 {
-    //class ReferencedAssemblyRecordSet : List<ReferencedAssemblyRecord>, IPersistentRecord
-    //{
-    //    internal static MyFunc<ReferencedAssemblyRecordSet> Factory = () => new ReferencedAssemblyRecordSet();
+    class ReferencedAssemblyRecordSet : List<ReferencedAssemblyRecord>, ISerializableRecord
+    {
+        internal static MyFunc<ReferencedAssemblyRecordSet> Factory = () => new ReferencedAssemblyRecordSet();
 
-    //    public void Read(Stream reader)
-    //    {
-    //        var count = reader.ReadInt32();
-    //        if (count <= 0)
-    //            return;
-    //        for (int i = 0; i < count; i++)
-    //        {
-    //            var item = ReferencedAssemblyRecord.Factory();
-    //            Add(item);
-    //        }
-    //    }
+        public void Read(Stream reader)
+        {
+            var count = reader.ReadInt32();
+            if (count <= 0)
+                return;
+            for (int i = 0; i < count; i++)
+            {
+                var item = ReferencedAssemblyRecord.Factory();
+                Add(item);
+            }
+        }
 
-    //    public void Write(Stream writer)
-    //    {
-    //        if (Count == 0)
-    //        {
-    //            writer.WriteInt32(0);
-    //            return;
-    //        }
-    //        writer.WriteInt32(Count);
-    //        for (int i = 0; i < Count; i++)
-    //            this[i].Write(writer);
-    //    }
-    //}
+        public void Write(Stream writer)
+        {
+            if (Count == 0)
+            {
+                writer.WriteInt32(0);
+                return;
+            }
+            writer.WriteInt32(Count);
+            for (int i = 0; i < Count; i++)
+                this[i].Write(writer);
+        }
+    }
 
     class ReferencedAssemblyRecord : ISerializableRecord, IEquatable<ReferencedAssemblyRecord>
     {

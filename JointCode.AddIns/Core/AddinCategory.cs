@@ -11,7 +11,7 @@ namespace JointCode.AddIns.Core
 {
     //Make sure the value (0, 1, 2, ...) of each enum is stable, because they have been used to compare to each other. 
     //For example, they have been used in AddinOperand.
-    enum AddinCategory : sbyte
+    public enum AddinCategory : sbyte
     {
         /// <summary>
         /// 1. An application must declare at least one RootAddin.

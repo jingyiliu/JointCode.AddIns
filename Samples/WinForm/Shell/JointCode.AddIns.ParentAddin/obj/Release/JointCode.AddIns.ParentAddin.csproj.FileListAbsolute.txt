@@ -1,0 +1,15 @@
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ParentAddin\addin.manifest
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ParentAddin\JointCode.AddIns.ParentAddin.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ParentAddin\JointCode.AddIns.ParentAddin.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.csprojResolveAssemblyReference.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.csproj.CoreCompileInputs.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ParentAddin\addin.manifest
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ParentAddin\JointCode.AddIns.ParentAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\ParentAddin\JointCode.AddIns.ParentAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.ParentAddin\obj\Release\JointCode.AddIns.ParentAddin.csproj.CopyComplete

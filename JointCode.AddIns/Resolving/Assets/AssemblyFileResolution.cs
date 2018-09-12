@@ -7,14 +7,14 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
+using JointCode.AddIns.Core.Storage;
 using System;
-using JointCode.AddIns.Core;
 
 namespace JointCode.AddIns.Resolving.Assets
 {
     class AssemblyFileResolution : DataFileResolution
     { 
-        internal AssemblyFileResolution() { Uid = UidProvider.InvalidAssemblyUid; }
+        internal AssemblyFileResolution() { Uid = UidStorage.InvalidAssemblyUid; }
 
 #if NET_4_0
         //// Only .net 4.0 provide AppDomain.AssemblyResolve event with an RequestingAssembly as event parameter, which 

@@ -1,0 +1,9 @@
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\obj\Debug\SampleSite.Addins.Schema.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\obj\Debug\SampleSite.Addins.Schema.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\bin\Debug\addin.manifest
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\bin\Debug\SampleSite.Addins.Schema.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\bin\Debug\SampleSite.Addins.Schema.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\obj\Debug\SampleSite.Addins.Schema.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\obj\Debug\SampleSite.Addins.Schema.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\bin\Debug\System.Web.WebPages.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\Mvc\SampleSite\SampleSite\AddIns\SampleSite.Addins.Schema\obj\Debug\SampleSite.Addins.Schema.csproj.CopyComplete

@@ -1,0 +1,13 @@
+<Addin>
+	<Header>
+		<Guid>33579248-B58B-427C-BE39-25B29A267778</Guid>
+		<FriendName>Schema addin</FriendName>
+	</Header>
+
+  <ExtensionSchema>
+    <MenuStrip path="MenuStrip/ToolStripMenuItem">
+      <ToolStripSeparator type="JointCode.AddIns.RootAddin.ToolStripSeparatorExtensionBuilder" description="This is a separator"/>
+    </MenuStrip>
+  </ExtensionSchema>
+
+</Addin>

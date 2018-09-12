@@ -15,51 +15,54 @@ using JointCode.Common.IO;
 
 namespace JointCode.AddIns.Metadata.Assets
 {
+    /// <summary>
+    /// The addin properties
+    /// </summary>
     class AddinHeaderRecord : AddinHeaderResolution
     {
         internal void Read(Stream reader)
         {
             AddinId = new AddinId();
             AddinId.Read(reader);
-            FriendName = reader.ReadString();
+            Name = reader.ReadString();
             Description = reader.ReadString();
             Version = reader.ReadVersion();
             CompatVersion = reader.ReadVersion();
-            Url = reader.ReadString();
-            Enabled = reader.ReadBoolean();
-            AddinCategory = (AddinCategory)reader.ReadSByte();
+            //Url = reader.ReadString();
+            //Enabled = reader.ReadBoolean();
+            //AddinCategory = (AddinCategory)reader.ReadSByte();
 
             var count = reader.ReadInt32();
             if (count <= 0)
                 return;
-            var result = new Dictionary<string, string>(count);
+            var properties = new Dictionary<string, string>(count);
             for (int i = 0; i < count; i++)
             {
                 var key = reader.ReadString();
                 var value = reader.ReadString();
-                result.Add(key, value);
+                properties.Add(key, value);
             }
-            Properties = result;
+            InnerProperties = properties;
         }
 
         internal void Write(Stream writer)
         {
             AddinId.Write(writer);
-            writer.WriteString(FriendName);
+            writer.WriteString(Name);
             writer.WriteString(Description);
             writer.WriteVersion(Version);
             writer.WriteVersion(CompatVersion);
-            writer.WriteString(Url);
-            writer.WriteBoolean(Enabled);
-            writer.WriteSByte((sbyte)AddinCategory);
+            //writer.WriteString(Url);
+            //writer.WriteBoolean(Enabled);
+            //writer.WriteSByte((sbyte)AddinCategory);
 
-            if (Properties == null || Properties.Count == 0)
+            if (PropertyCount == 0)
             {
                 writer.WriteInt32(0);
                 return;
             }
-            writer.WriteInt32(Properties.Count);
-            foreach (var kv in Properties)
+            writer.WriteInt32(PropertyCount);
+            foreach (var kv in InnerProperties)
             {
                 writer.WriteString(kv.Key);
                 writer.WriteString(kv.Value);

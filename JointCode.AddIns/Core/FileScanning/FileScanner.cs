@@ -16,8 +16,10 @@ namespace JointCode.AddIns.Core.FileScanning
 {
     abstract class FileScanner
     {
-        internal abstract FilePack GetFilePack(string probeDirectory, string addinDirectory, string manifestFile,
-            AddinFilePack addinFilePack);
+        protected internal const string ThisAssemblyName = "JointCode.AddIns.dll";
+
+        internal abstract ScanFilePack ScanForFilePack(string probingDirectory, string addinDirectory, string manifestFile,
+            AddinFilePack matchingFilePack);
 
         protected internal static bool IsAssembly(string file)
         {
@@ -28,75 +30,128 @@ namespace JointCode.AddIns.Core.FileScanning
 
     class XmlBasedFileScanner : FileScanner
     {
-        internal override FilePack GetFilePack(string probeDirectory, string addinDirectory, string manifestFile,
-            AddinFilePack addinFilePack)
+        internal override ScanFilePack ScanForFilePack(string probingDirectory, string addinDirectory, string manifestFileName,
+            AddinFilePack matchingFilePack)
         {
-            var addinDirectoryName = Path.GetFileName(addinDirectory);
-            var filePack = new FilePack { AddinDirectoryName = addinDirectoryName, AddinProbeDirectory = probeDirectory };
+            //var addinDirectoryName = Path.GetFileName(addinDirectory);
+            var filePack = new ScanFilePack { AddinDirectory = addinDirectory, AddinProbingDirectory = probingDirectory };
+            return matchingFilePack != null
+                ? DoScanForFilePack(filePack, addinDirectory, manifestFileName, matchingFilePack)
+                : DoScanForFilePack(filePack, addinDirectory, manifestFileName);
+        }
 
+        static ScanFilePack DoScanForFilePack(ScanFilePack filePack, string addinDirectory, string manifestFileName, AddinFilePack matchingFilePack)
+        {
             //位于插件文件夹下面的文件都被视为潜在包含插件配置的清单文件或程序集文件
-            //但最终这些文件到底是插件配置文件、程序集文件或数据文件，要看文件内容来决定
+            //但最终这些文件到底是插件配置文件、程序集文件或数据文件，要根据文件名来决定
             var files = Directory.GetFiles(addinDirectory);
 
-            if (addinFilePack != null)
+            var shouldRescan = false;
+            foreach (var file in files)
             {
-                var shouldRescan = false;
-                foreach (var file in files)
+                if (IsAssembly(file))
                 {
-                    if (IsAssembly(file))
-                    {
-                        shouldRescan |= IsScannableAssemblyFile(file, addinFilePack);
-                        filePack.AddAssemblyFile(file);
-                    }
-                    else if (filePack.ManifestFile == null && file.EndsWith(manifestFile, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        shouldRescan |= IsScannableManifestFile(file, addinFilePack);
-                        filePack.ManifestFile = file;
-                    }
-                    else
-                    {
-                        filePack.AddDataFile(file);
-                    }
+                    shouldRescan |= IsScannableAssemblyFile(file, matchingFilePack);
+                    filePack.AddAssemblyFile(file);
                 }
-                if (!shouldRescan)
-                    return null;
-            }
-            else
-            {
-                foreach (var file in files)
+                else if (filePack.ManifestFile == null && file.EndsWith(manifestFileName, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (IsAssembly(file))
-                        filePack.AddAssemblyFile(file);
-                    else if (filePack.ManifestFile == null && file.EndsWith(manifestFile, StringComparison.InvariantCultureIgnoreCase))
-                        filePack.ManifestFile = file;
-                    else
-                        filePack.AddDataFile(file);
+                    shouldRescan |= IsScannableManifestFile(file, matchingFilePack);
+                    filePack.ManifestFile = file;
+                }
+                else
+                {
+                    filePack.AddDataFile(file);
                 }
             }
 
-            //位于插件文件夹的子文件夹中的文件都被视为数据文件
-            var dataDirectories = Directory.GetDirectories(addinDirectory);
-            foreach (var dataDirectory in dataDirectories)
-                GetAllDataFiles(dataDirectory, filePack);
+            if (filePack.ManifestFile == null) // 插件清单文件必须位于插件基目录下，如果在插件基目录下未找到清单文件，则认为这不是一个插件
+                return null;
 
-            return filePack.ManifestFile == null ? null : filePack;
+            // 递归扫描插件基目录下的所有子目录以查找程序集和数据文件
+            var subdirectories = Directory.GetDirectories(addinDirectory);
+            foreach (var subdirectory in subdirectories)
+                shouldRescan |= ScanSubdirecotires(filePack, subdirectory, matchingFilePack);
+
+            return shouldRescan ? filePack : null;
         }
 
-        static void GetAllDataFiles(string dataDirectory, FilePack filePack)
+        // 递归扫描插件基目录下的所有子目录以查找程序集和数据文件
+        static bool ScanSubdirecotires(ScanFilePack filePack, string subdirectory, AddinFilePack matchingFilePack)
         {
-            //Logger.Info(string.Format("Scanning directory [{0}]...", directory));
-            var dataFiles = Directory.GetFiles(dataDirectory);
-            foreach (var dataFile in dataFiles) 
-            	filePack.AddDataFile(dataFile);
-            foreach (string subDir in Directory.GetDirectories(dataDirectory))
-                GetAllDataFiles(subDir, filePack);
+            var shouldRescan = false;
+            var files = Directory.GetFiles(subdirectory);
+            
+            foreach (var file in files)
+            {
+                if (IsAssembly(file))
+                {
+                    shouldRescan |= IsScannableAssemblyFile(file, matchingFilePack);
+                    filePack.AddAssemblyFile(file);
+                }
+                else
+                {
+                    filePack.AddDataFile(file);
+                }
+            }
+
+            var childDirectories = Directory.GetDirectories(subdirectory);
+            foreach (var childDirectory in childDirectories)
+                shouldRescan |= ScanSubdirecotires(filePack, childDirectory, matchingFilePack);
+
+            return shouldRescan;
         }
 
-        static bool IsScannableAssemblyFile(string file, AddinFilePack addinFilePack)
+        static ScanFilePack DoScanForFilePack(ScanFilePack filePack, string addinDirectory, string manifestFileName)
         {
-            if (addinFilePack.AssemblyFiles == null)
+            //位于插件文件夹下面的文件都被视为潜在包含插件配置的清单文件或程序集文件
+            //但最终这些文件到底是插件配置文件、程序集文件或数据文件，要根据文件名来决定
+            var files = Directory.GetFiles(addinDirectory);
+
+            foreach (var file in files)
+            {
+                if (IsAssembly(file))
+                    filePack.AddAssemblyFile(file);
+                else if (filePack.ManifestFile == null && file.EndsWith(manifestFileName, StringComparison.InvariantCultureIgnoreCase))
+                    filePack.ManifestFile = file;
+                else
+                    filePack.AddDataFile(file);
+            }
+
+            if (filePack.ManifestFile == null)
+                return null; // 插件清单文件必须位于插件基目录下，如果在插件基目录下未找到清单文件，则认为这不是一个插件
+
+            // 递归扫描插件基目录下的所有子目录以查找程序集和数据文件
+            var subdirectories = Directory.GetDirectories(addinDirectory);
+            foreach (var subdirectory in subdirectories)
+                ScanSubdirecotires(filePack, subdirectory);
+
+            return filePack;
+        }
+
+        // 递归扫描插件基目录下的所有子目录以查找程序集和数据文件
+        static void ScanSubdirecotires(ScanFilePack filePack, string subdirectory)
+        {
+            var files = Directory.GetFiles(subdirectory);
+
+            foreach (var file in files)
+            {
+                if (IsAssembly(file))
+                    filePack.AddAssemblyFile(file);
+                else
+                    filePack.AddDataFile(file);
+            }
+
+            var childDirectories = Directory.GetDirectories(subdirectory);
+            foreach (var childDirectory in childDirectories)
+                ScanSubdirecotires(filePack, childDirectory);
+        }
+
+        static bool IsScannableAssemblyFile(string file, AddinFilePack matchingFilePack)
+        {
+            if (matchingFilePack.AssemblyFiles == null)
                 return true;
-            foreach (var assemblyFile in addinFilePack.AssemblyFiles)
+            foreach (var assemblyFile in matchingFilePack.AssemblyFiles)
             {
                 if (!file.EndsWith(assemblyFile.FilePath, StringComparison.InvariantCultureIgnoreCase))
                     continue;
@@ -106,10 +161,12 @@ namespace JointCode.AddIns.Core.FileScanning
             return false;
         }
 
-        static bool IsScannableManifestFile(string file, AddinFilePack addinFilePack)
+        static bool IsScannableManifestFile(string file, AddinFilePack matchingFilePack)
         {
-            return IoHelper.GetLastWriteTime(file) != addinFilePack.ManifestFile.LastWriteTime 
-                || IoHelper.GetFileHash(file) != addinFilePack.ManifestFile.FileHash;
+            var fi = IoHelper.GetFileInfo(file);
+            return fi.Length != matchingFilePack.ManifestFile.FileLength 
+                || fi.LastWriteTime != matchingFilePack.ManifestFile.LastWriteTime 
+                || IoHelper.GetFileHash(file) != matchingFilePack.ManifestFile.FileHash;
         }
     }
 }

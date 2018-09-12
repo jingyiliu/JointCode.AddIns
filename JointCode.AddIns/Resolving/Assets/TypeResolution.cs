@@ -11,7 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using JointCode.AddIns.Core;
+using JointCode.AddIns.Extension;
 using Mono.Cecil;
+using Mono.Collections.Generic;
 
 namespace JointCode.AddIns.Resolving.Assets
 {
@@ -21,14 +23,16 @@ namespace JointCode.AddIns.Resolving.Assets
         static readonly TypeDefinition ExtensionPointInterface;
         static readonly TypeDefinition ExtensionBuilderInterface;
         static readonly TypeDefinition CompositeExtensionBuilderInterface;
-        static readonly TypeDefinition ExtensionDataAttributeType;
+        internal static readonly TypeDefinition ExtensionPropertyAttributeType;
+        static readonly TypeDefinition AddinActivatorInterface;
 
         static TypeResolution()
         {
             var epMetadataToken = typeof(IExtensionPoint<,>).MetadataToken;
             var ebMetadataToken = typeof(IExtensionBuilder<>).MetadataToken;
             var cebMetadataToken = typeof(ICompositeExtensionBuilder<>).MetadataToken;
-            var edaMetadataToken = typeof(ExtensionPropertyAttribute).MetadataToken;
+            var epaMetadataToken = typeof(ExtensionPropertyAttribute).MetadataToken;
+            var aaMetadataToken = typeof(IAddinActivator).MetadataToken;
             var thisAssembly = AssemblyResolution.ThisAssembly;
             foreach (var module in thisAssembly.Modules)
             {
@@ -41,34 +45,36 @@ namespace JointCode.AddIns.Resolving.Assets
                         ExtensionBuilderInterface = type;
                     if (CompositeExtensionBuilderInterface == null && metadataToken == cebMetadataToken)
                         CompositeExtensionBuilderInterface = type;
-                    if (ExtensionDataAttributeType == null && metadataToken == edaMetadataToken)
-                        ExtensionDataAttributeType = type;
+                    if (ExtensionPropertyAttributeType == null && metadataToken == epaMetadataToken)
+                        ExtensionPropertyAttributeType = type;
+                    if (AddinActivatorInterface == null && metadataToken == aaMetadataToken)
+                        AddinActivatorInterface = type;
                 }
             }
         }
 
-        public static implicit operator TypeId(TypeResolution d)
+        public static implicit operator AddinTypeHandle(TypeResolution tr)
         {
-            return new TypeId(d._assembly.Uid, d.MetadataToken);
+            return new AddinTypeHandle(tr._assembly.Uid, tr.MetadataToken);
         }
     }
 
     /// <summary>
     /// Represent a type during resolution.
     /// Notes that to determine whether two <see cref="TypeResolution"/>s is the same, you can not use <see cref="object.ReferenceEquals"/>,
-    /// try to use the <see cref="TypeResolution.Equals"/> instead.
+    /// try to use the <see cref="TypeResolution.Equals(TypeResolution)"/> instead.
     /// </summary>
     partial class TypeResolution : IEquatable<TypeResolution>
     {
         readonly AssemblyResolution _assembly;
         readonly TypeDefinition _typeDef;
-        Type _type;
-        List<PropertyInfo> _properties;
+        //Type _type;
+        //List<PropertyInfo> _properties;
 
         internal TypeResolution(AssemblyResolution assembly, TypeDefinition typeDef)
         {
             _assembly = assembly;
-            _typeDef = typeDef;
+            _typeDef = typeDef; 
         }
 
         ///// <summary>
@@ -99,10 +105,10 @@ namespace JointCode.AddIns.Resolving.Assets
             return result;
         }
 
-        internal bool IsAssignableFrom(TypeResolution subType)
-        {
-            return _typeDef.IsAssignableFrom(subType._typeDef);
-        }
+        //internal bool IsAssignableFrom(TypeResolution subType)
+        //{
+        //    return _typeDef.IsAssignableFrom(subType._typeDef);
+        //}
 
         #region IEquatable implementation
         public bool Equals(TypeResolution other)
@@ -111,138 +117,198 @@ namespace JointCode.AddIns.Resolving.Assets
         }
         #endregion
 
-        internal Type GetRuntimeType()
-        {
-            if (_type != null)
-                return _type;
-            var assembly = _assembly.GetRuntimeAssembly();
-            foreach (var module in assembly.GetModules())
-            {
-                _type = module.ResolveType(MetadataToken);
-                if (_type != null)
-                    break;
-            }
-            return _type;
-        }
+        internal bool HasProperties { get { return _typeDef.HasProperties; } }
+        internal Collection<PropertyDefinition> Properties { get { return _typeDef.Properties; } }
 
-        internal List<PropertyInfo> GetSettableRuntimeProperties()
-        {
-            if (_properties != null)
-                return _properties;
-            var type = GetRuntimeType();
-            var properties = type.GetProperties();
-            foreach (var property in properties)
-            {
-                if (!property.CanWrite)
-                    continue;
-                _properties = _properties ?? new List<PropertyInfo>();
-                _properties.Add(property);
-            }
-            return _properties;
-        }
+        //internal Type GetRuntimeType()
+        //{
+        //    if (_type != null)
+        //        return _type;
+        //    var assembly = _assembly.GetAssembly();
+        //    foreach (var module in assembly.GetModules())
+        //    {
+        //        _type = module.ResolveType(MetadataToken);
+        //        if (_type != null)
+        //            break;
+        //    }
+        //    return _type;
+        //}
+
+        //internal List<PropertyInfo> GetSettableRuntimeProperties()
+        //{
+        //    if (_properties != null)
+        //        return _properties;
+        //    var type = GetRuntimeType();
+        //    var properties = type.GetProperties();
+        //    foreach (var property in properties)
+        //    {
+        //        if (!property.CanWrite)
+        //            continue;
+        //        _properties = _properties ?? new List<PropertyInfo>();
+        //        _properties.Add(property);
+        //    }
+        //    return _properties;
+        //}
     }
 
     partial class TypeResolution
     {
-        internal bool ImplementsExtensionPointInterface(IMessageDialog dialog, ResolutionContext ctx, out TypeResolution type)
+        // whether this type implements the extension point interface
+        internal bool ImplementsAddinActivatorInterface(ResolutionResult resolutionResult, ResolutionContext ctx)
         {
-            return TryGetGenericInterfaceImplementation(ctx, _typeDef, ExtensionPointInterface, 2, out type) != null;
+            return _typeDef.ImplementsInterface(AddinActivatorInterface);
         }
 
-        internal bool ImplementsExtensionBuilderInterface(IMessageDialog dialog, ResolutionContext ctx, out TypeResolution type)
+        // whether this type implements the extension point interface
+        internal bool ImplementsExtensionPointInterface(ResolutionResult resolutionResult, ResolutionContext ctx, out TypeResolution extensionType)
         {
-            return TryGetGenericInterfaceImplementation(ctx, _typeDef, ExtensionBuilderInterface, 1, out type) != null;
+            return TryResolveExtensionType(ctx, _typeDef, ExtensionPointInterface, 2, out extensionType);
         }
 
-        internal bool ImplementsCompositeExtensionBuilderInterface(IMessageDialog dialog, ResolutionContext ctx, out TypeResolution type)
+        // whether this type implements the extension builder interface
+        internal bool ImplementsExtensionBuilderInterface(ResolutionResult resolutionResult, ResolutionContext ctx, out TypeResolution extensionType)
         {
-            return TryGetGenericInterfaceImplementation(ctx, _typeDef, CompositeExtensionBuilderInterface, 1, out type) != null;
+            return TryResolveExtensionType(ctx, _typeDef, ExtensionBuilderInterface, 1, out extensionType);
         }
 
-        TypeReference TryGetGenericInterfaceImplementation(ResolutionContext ctx, 
+        // whether this type implements the composite extension builder interface
+        internal bool ImplementsCompositeExtensionBuilderInterface(ResolutionResult resolutionResult, ResolutionContext ctx, out TypeResolution extensionType)
+        {
+            return TryResolveExtensionType(ctx, _typeDef, CompositeExtensionBuilderInterface, 1, out extensionType);
+        }
+
+        bool TryResolveExtensionType(ResolutionContext ctx, 
             TypeDefinition classType, TypeDefinition baseGenericInterface,
             int genericParamCount, out TypeResolution extensionType)
         {
             extensionType = null;
 
+            // tries to get the extension type
             TypeReference trExtensionType;
-            var result = TryGetGenericInterfaceImplementation(classType, baseGenericInterface, genericParamCount, out trExtensionType);
-            if (result == null)
-                return null;
+            var result = TryResolveExtensionType(classType, null, baseGenericInterface, genericParamCount, out trExtensionType);
+            if (!result)
+                return false;
 
+            // tries to retrieve the extension type from the current addin.
             if (ctx.TryGetAddinType(Assembly.DeclaringAddin, trExtensionType.FullName, out extensionType))
-                return result;
+                return true;
 
-            var tdExtensionType = trExtensionType.Resolve();
+			// tries to find the extension type from the probable location (runtime or application).
+			var tdExtensionType = trExtensionType.Resolve();
             if (ctx.TryGetProbableType(tdExtensionType.Module.Assembly.FullName, trExtensionType.FullName, out extensionType))
-                return result;
+                return true;
 
-            return null;
+            return false;
         }
 
-        // @classType is an implementation type of the IExtensionPoint<TExtension, TRoot>, IExtensionBuilder<TExtension>, or 
-        // ICompositeExtensionBuilder<TExtension>
-        static TypeReference TryGetGenericInterfaceImplementation(TypeDefinition classType, TypeDefinition baseGenericInterface,
-            int genericParamCount, out TypeReference extensionType)
+		// @tdType is an implementation type of the IExtensionPoint<TExtension, TRoot>, IExtensionBuilder<TExtension>, or ICompositeExtensionBuilder<TExtension>
+		// @trType is the same to the @tdType, only it's a TypeReference, and can be null.
+		// @trExtensionType: the return value, notes that this value can not be of type GenericParameter.
+		static bool TryResolveExtensionType(TypeDefinition tdType, TypeReference trType, TypeDefinition baseGenericInterface,
+            int genericParamCount, out TypeReference trExtensionType)
         {
-            var subType = classType;
-            var interfaces = subType.Interfaces;
+            var baseTypeDef = tdType;
+            var interfaces = baseTypeDef.Interfaces;
             if (interfaces != null)
             {
                 foreach (var @interface in interfaces)
                 {
-                    var result = DoTryGetGenericInterfaceImplementation(@interface, baseGenericInterface, genericParamCount, out extensionType);
-                    if (result != null)
-                        return result;
+                    var result = CanResolveExtensionType(trType, @interface, baseGenericInterface, genericParamCount, out trExtensionType);
+                    if (result)
+                        return true;
                 }
             }
 
-            var baseTypeRef = subType.BaseType;
+            var baseTypeRef = baseTypeDef.BaseType;
             if (baseTypeRef == null)
             {
-                extensionType = null;
-                return null;
+                trExtensionType = null;
+                return false;
             }
 
-            subType = baseTypeRef.SafeResolve();
+            // 如果 baseTypeRef 是一个闭合泛型类型，则 mono.cecil 无法将其正确解析为对应的 TypeDefinition（会丢失 baseTypeRef 的泛型参数类型），
+            // 因此这里手动将其泛型参数加入 baseTypeDef.GenericParameters 中，以便在获取其 interface 时，能够将泛型参数传给 interface。
+            // 但这样获取的 interface 的泛型参数会变成 GenericParameter 类型，是不正确的，因此我们在 CanResolveExtensionType 方法再传入原来的 baseTypeRef，
+            // 以便可以将 interface 的泛型参数与 baseTypeRef 比较，并直接从 baseTypeRef 中提取泛型参数。
+            baseTypeDef = baseTypeRef.SafeResolve();
+
+            if (baseTypeRef.IsGenericInstance)
+            {
+                var baseType = (GenericInstanceType)baseTypeRef;
+                var genArgs = baseType.GenericArguments;
+                for (int i = 0; i < genArgs.Count; i++)
+                {
+                    var genArg = genArgs[i];
+                    baseTypeDef.GenericParameters[i] = new GenericParameter(genArg.FullName, genArg);
+                }
+            }
+
             // recursively call this method.
-            return TryGetGenericInterfaceImplementation(subType, baseGenericInterface, genericParamCount, out extensionType);
+            return TryResolveExtensionType(baseTypeDef, baseTypeRef, baseGenericInterface, genericParamCount, out trExtensionType);
         }
 
-        // @baseGenericDefinition: IExtensionPoint<TExtension, TRoot>, IExtensionBuilder<TExtension>, or ICompositeExtensionBuilder<TExtension>
-        static TypeReference DoTryGetGenericInterfaceImplementation(TypeReference subInterface, TypeDefinition baseGenericInterface,
-            int genericParamCount, out TypeReference extensionType)
+		// @trType: the implementation type of the @subInterface.
+		// @subInterface: a closed generic interfance of the @baseGenericDefinition.
+		// @baseGenericDefinition: the open generic interface: IExtensionPoint<TExtension, TRoot>, IExtensionBuilder<TExtension>, or ICompositeExtensionBuilder<TExtension>
+		static bool CanResolveExtensionType(TypeReference trType, TypeReference subInterface, TypeDefinition baseGenericInterface,
+            int genericParamCount, out TypeReference trExtensionType)
         {
-            extensionType = null;
+            trExtensionType = null;
             if (subInterface.IsGenericInstance) // a closed generic type
             {
                 var genericDef = subInterface.GetGenericTypeDefinition();
                 var matchingGenericInterface = genericDef.SafeResolve();
-                if (ReferenceEquals(matchingGenericInterface, baseGenericInterface))
-                {
-                    var genericInstanceType = (GenericInstanceType)subInterface;
-                    var genArgs = genericInstanceType.GenericArguments;
-                    if (genArgs.Count == genericParamCount)
-                    {
-                        extensionType = genArgs[0];
-                        return subInterface;
-                    }
-                }
+                if (matchingGenericInterface.EqualsTo(baseGenericInterface))
+                    return CanResolveExtensionType(trType, subInterface, genericParamCount, out trExtensionType);
             }
             else
             {
                 var subInterfaceDef = subInterface.SafeResolve();
                 if (subInterfaceDef.Interfaces == null)
-                    return null;
+                    return false;
                 foreach (var iface in subInterfaceDef.Interfaces)
                 {
-                    var result = DoTryGetGenericInterfaceImplementation(iface, baseGenericInterface, genericParamCount, out extensionType);
-                    if (result != null)
-                        return result;
+                    var result = CanResolveExtensionType(trType, iface, baseGenericInterface, genericParamCount, out trExtensionType);
+                    if (result)
+                        return true;
                 }
             }
             
-            return null;
+            return false;
         }
+
+	    static bool CanResolveExtensionType(TypeReference trType, TypeReference subInterface, int genericParamCount, out TypeReference trExtensionType)
+	    {
+			var genericInstanceType = (GenericInstanceType)subInterface;
+		    var genArgs = genericInstanceType.GenericArguments;
+		    if (genArgs.Count != genericParamCount)
+		    {
+			    trExtensionType = null;
+			    return false;
+			}
+
+	        var genArg = genArgs[0]; // TExtension 位
+
+            if (trType == null || !trType.IsGenericInstance)
+	        {
+	            trExtensionType = genArg;
+	            return true;
+            }
+
+	        var baseType = (GenericInstanceType)trType;
+	        var genArgs2 = baseType.GenericArguments;
+	        for (int i = 0; i < genArgs2.Count; i++)
+	        {
+	            var genArg2 = genArgs2[i];
+	            if (genArg2.FullName == genArg.FullName)
+	            {
+	                trExtensionType = genArg2;
+	                return true;
+                }
+	        }
+
+	        trExtensionType = null;
+            return false;
+	    }
     }
 }

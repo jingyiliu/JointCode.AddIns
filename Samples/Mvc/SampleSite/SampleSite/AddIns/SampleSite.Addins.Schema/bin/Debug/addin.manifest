@@ -1,0 +1,11 @@
+<Addin guid="11579248-B58B-427C-BE39-25B63A267327" name="Schema">
+
+  <ExtensionSchema>
+    <MvcMenuStrip type="SampleSite.Addins.Schema.MvcMenuStripExtensionPoint">
+      <MvcMenuItem type="SampleSite.Addins.Schema.MvcMenuItemExtensionBuilder">
+        <MvcMenuItem/>
+      </MvcMenuItem>
+    </MvcMenuStrip>
+  </ExtensionSchema>
+
+</Addin>

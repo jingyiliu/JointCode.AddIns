@@ -1,47 +1,32 @@
-<Addin>
-	<Header>
-		<Guid>909F6695-6AD8-468C-A69B-D4C241E2A67D</Guid>
-		<FriendName>Parent addin</FriendName>
-		<Version>1.0.0.0</Version>
-		<CompatVersion>1.0.0.0</CompatVersion>
-		<Category>Root</Category>
-		<Enabled>true</Enabled>
-		<Url>http://some/url</Url>
-		<Description>A parent addin</Description>
-		<Author>Some author</Author>
-		<ContactAddress>admin@WebSite.com</ContactAddress>
-		<Company>Some company</Company>
-		<Copyright>Office</Copyright>
-	</Header>
+<Addin guid="909F6695-6AD8-468C-A69B-D4C241E2A67D" name="ParentAddin" version="1.0.0.0" compatVersion="1.0.0.0" category="Root" enabled="true" description="A parent addin">
 
+  <ExtensionSchema>
+    <ToolStrip type="JointCode.AddIns.ParentAddin.ToolStripExtensionPoint" friendName="FriendDisplayName" description="This is the extension for ToolStrip">
+      <ToolStripDropDownButton type="JointCode.AddIns.ParentAddin.ToolStripDropDownButtonExtensionBuilder">
+        <ToolStripComboBox type="JointCode.AddIns.ParentAddin.ToolStripComboBoxExtensionBuilder"/>
+        <ToolStripMenuItem type="JointCode.AddIns.ParentAddin.ToolStripMenuItemExtensionBuilder"/>
+        <ToolStripSeparator type="JointCode.AddIns.ParentAddin.ToolStripSeparatorExtensionBuilder" description="This is a separator"/>
+      </ToolStripDropDownButton>
+      <ToolStripLabel type="JointCode.AddIns.ParentAddin.ToolStripLabelExtensionBuilder"/>
+      <ToolStripButton type="JointCode.AddIns.ParentAddin.ToolStripButtonExtensionBuilder"/>
+    </ToolStrip>
+  </ExtensionSchema>
+  
 	<Extensions>
-		<Declaration>
-			<ToolStrip type="JointCode.AddIns.ParentAddin.ToolStripExtensionPoint" friendName="FriendDisplayName" description="This is the extension for ToolStrip">
-				<ToolStripDropDownButton type="JointCode.AddIns.ParentAddin.ToolStripDropDownButtonExtensionBuilder">
-					<ToolStripComboBox type="JointCode.AddIns.ParentAddin.ToolStripComboBoxExtensionBuilder"/>
-					<ToolStripMenuItem type="JointCode.AddIns.ParentAddin.ToolStripMenuItemExtensionBuilder"/>
-					<ToolStripSeparator type="JointCode.AddIns.ParentAddin.ToolStripSeparatorExtensionBuilder" description="This is a separator"/>
-				</ToolStripDropDownButton>
-				<ToolStripLabel type="JointCode.AddIns.ParentAddin.ToolStripLabelExtensionBuilder"/>
-				<ToolStripButton type="JointCode.AddIns.ParentAddin.ToolStripButtonExtensionBuilder"/>
-			</ToolStrip>
-		</Declaration>
+	  <MenuStrip>
+	    <ToolStripMenuItem Id="Help" Name="Help">
+	      <ToolStripMenuItem Id="parentMenu1" Name="parentMenu1" Tooltip="This is parentMenu1" CommandType="JointCode.AddIns.ParentAddin.ParentMenu1Command"/>
+	      <ToolStripMenuItem Id="parentMenu2" Name="parentMenu2" Tooltip="This is parentMenu2" CommandType="JointCode.AddIns.ParentAddin.ParentMenu2Command"/>
+	    </ToolStripMenuItem>
+	  </MenuStrip>
 
-		<Implementation>
-			<MenuStrip>
-				<ToolStripMenuItem Id="Help" Name="Help">
-					<ToolStripMenuItem Id="parentMenu1" Name="parentMenu1" Tooltip="This is parentMenu1" CommandType="JointCode.AddIns.ParentAddin.ParentMenu1Command"/>
-					<ToolStripMenuItem Id="parentMenu2" Name="parentMenu2" Tooltip="This is parentMenu2" CommandType="JointCode.AddIns.ParentAddin.ParentMenu2Command"/>
-				</ToolStripMenuItem>
-			</MenuStrip>
-
-			<ToolStrip>
-				<ToolStripButton Id="ParentButton" Name="ParentButton" CommandType="JointCode.AddIns.ParentAddin.ParentMenu3Command"/>
-				<ToolStripLabel Id="ParentLabel"/>
-				<ToolStripDropDownButton Id="ParentDropDownButton" Name="ParentDropDownButton">
-					<ToolStripMenuItem Id="parentMenu4" Name="parentMenu4" Tooltip="This is parentMenu4" CommandType="JointCode.AddIns.ParentAddin.ParentMenu4Command"/>
-				</ToolStripDropDownButton>
-			</ToolStrip>
-		</Implementation>
+	  <ToolStrip>
+	    <ToolStripButton Id="parentMenu3" Name="123parentMenu3" CommandType="JointCode.AddIns.ParentAddin.ParentMenu3Command"/>
+	    <ToolStripLabel Id="ParentLabel"/>
+	    <ToolStripDropDownButton Id="ParentDropDownButton" Name="ParentDropDownButton">
+	      <ToolStripMenuItem Id="parentMenu4" Name="parentMenu4" Tooltip="This is parentMenu4" CommandType="JointCode.AddIns.ParentAddin.ParentMenu4Command"/>
+	    </ToolStripDropDownButton>
+	  </ToolStrip>
 	</Extensions>
+  
 </Addin>

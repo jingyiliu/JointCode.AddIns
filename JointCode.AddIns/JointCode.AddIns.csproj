@@ -35,132 +35,118 @@
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>JointCode.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.Cecil">
-      <HintPath>..\packages\Mono.Cecil.0.9.6.4\lib\net20\Mono.Cecil.dll</HintPath>
+      <HintPath>..\..\packages\Mono.Cecil.0.9.6.4\lib\net20\Mono.Cecil.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AddinAssemblyAttribute.cs" />
-    <Compile Include="AddinConfiguration.cs" />
-    <Compile Include="AddinManager.cs" />
-    <Compile Include="Condition.cs" />
-    <Compile Include="Core\Addin.cs" />
+    <Compile Include="..\..\..\CommonFiles\GlobalAssemblyInfo.cs">
+      <Link>Properties\GlobalAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="AddinOptions.cs" />
+    <Compile Include="Core\AssemblyLoadPolicy.cs" />
     <Compile Include="Core\AddinCategory.cs" />
-    <Compile Include="Core\AddinContext.cs" />
-    <Compile Include="Core\AddinEngine.cs" />
-    <Compile Include="Core\AddinEngine.Initialize.cs" />
-    <Compile Include="Core\AddinFileSystem.cs" />
+    <Compile Include="Core\DefaultAssemblyLoadPolicy.cs" />
+    <Compile Include="Core\DefaultStringLocalizer.cs" />
+    <Compile Include="Extension\AddinExtension.cs" />
+    <Compile Include="Extension\ExtensionPointDescription.cs" />
+    <Compile Include="Core\DefaultNameConvention.cs" />
+    <Compile Include="Core\IReflection.cs" />
+    <Compile Include="Addin.cs" />
+    <Compile Include="Core\DefaultAddinContext.cs" />
+    <Compile Include="AddinEngine.cs" />
+    <Compile Include="AddinEngine.Initialize.cs" />
+    <Compile Include="Core\AddinFile.cs" />
+    <Compile Include="AddinFramework.cs" />
+    <Compile Include="AddinEngine.CURD.cs" />
+    <Compile Include="Core\AddinId.cs" />
     <Compile Include="Core\AddinOperationStatus.cs" />
-    <Compile Include="Core\AddinRunningStatus.cs" />
-    <Compile Include="Core\ConsoleMessageDialog.cs" />
-    <Compile Include="Core\DomainManager.cs" />
-    <Compile Include="Core\FileConfiguration.cs" />
-    <Compile Include="Core\FileScanning\FilePack.cs" />
-    <Compile Include="Core\FileScanning\FilePackResult.cs" />
+    <Compile Include="Core\AddinRepository.cs" />
+    <Compile Include="Core\AddinStatus.cs" />
+    <Compile Include="Core\DefaultMessageDialog.cs" />
+    <Compile Include="Core\DefaultServiceProvider.cs" />
+    <Compile Include="Core\Dependencies\DependencyDescription.cs" />
+    <Compile Include="Core\AddinFileSettings.cs" />
+    <Compile Include="Core\FileScanning\ScanFilePack.cs" />
+    <Compile Include="Core\FileScanning\ScanFilePackResult.cs" />
     <Compile Include="Core\FileScanning\FilePackService.cs" />
     <Compile Include="Core\FileScanning\FileScanner.cs" />
     <Compile Include="Core\Helpers\IoHelper.cs" />
-    <Compile Include="Core\Helpers\StorageHelper.cs" />
-    <Compile Include="Core\Helpers\StringHelper.cs" />
+    <Compile Include="Core\Helpers\ExtensionHelper.cs" />
+    <Compile Include="Core\Helpers\TypeHelper.cs" />
     <Compile Include="Core\Helpers\XmlHelper.cs" />
-    <Compile Include="Core\Convertion\ObjectConverters.cs" />
+    <Compile Include="IServiceProvider.cs" />
     <Compile Include="Core\ObjectId.cs" />
-    <Compile Include="Core\OperationResult.cs" />
-    <Compile Include="Core\Serialization\SerializationHelper.cs" />
-    <Compile Include="Core\Serialization\SerializableHolder.cs" />
-    <Compile Include="Core\RelativePosition.cs" />
+    <Compile Include="Core\Data\DataSerializer.cs" />
+    <Compile Include="Core\Data\DataHolder.cs" />
+    <Compile Include="Extension\RelativePosition.cs" />
     <Compile Include="Core\Runtime\AssemblyKey.cs" />
     <Compile Include="Core\Runtime\RuntimeAssemblyResolver.cs" />
     <Compile Include="Core\Runtime\RuntimeAssembly.cs" />
-    <Compile Include="Core\Storage\Common.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Exceptions.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\MasterStream.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Segment.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\SegmentExtent.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Storage.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\StorageMetadata.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\StorageStatistics.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\StorageStream.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\StorageStreamMetadata.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\StreamTable.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\StreamTableMap.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Tools.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Transactions\Segment.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Transactions\SegmentMetadata.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Transactions\TransactionLogStreamMetadata.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\Transactions\TransactionStream.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core\Storage\WriteBufferedStream.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Core\Storage\AddinMetadataTable.cs" />
+    <Compile Include="Core\Storage\AddinStorage.cs" />
     <Compile Include="Core\SysConstants.cs" />
-    <Compile Include="Core\UidProvider.cs" />
+    <Compile Include="Core\Storage\UidStorage.cs" />
     <Compile Include="ExtensionAttribute.cs" />
-    <Compile Include="Properties\GlobalAssemblyInfo.cs" />
-    <Compile Include="IExtensionBuilderFactory.cs" />
-    <Compile Include="ExtensionPropertyAttribute.cs" />
-    <Compile Include="ExtensionEvent.cs" />
-    <Compile Include="IExtensionPointFactory.cs" />
+    <Compile Include="IAddinActivator.cs" />
+    <Compile Include="IStringLocalizer.cs" />
+    <Compile Include="Metadata\AddinRecordSet.cs" />
+    <Compile Include="Metadata\Assets\ApplicationAssemblyRecord.cs" />
+    <Compile Include="Metadata\Assets\AddinActivatorRecord.cs" />
+    <Compile Include="Metadata\Assets\ReferencedApplicationAssemblyRecord.cs" />
+    <Compile Include="Parsing\AddinManifest.cs" />
+    <Compile Include="Extension\IExtensionBuilderFactory.cs" />
+    <Compile Include="Extension\ExtensionPropertyAttribute.cs" />
+    <Compile Include="Extension\IExtensionPointFactory.cs" />
     <Compile Include="IAddinContext.cs" />
-    <Compile Include="IExtensionBuilder.cs" />
-    <Compile Include="IExtensionPoint.cs" />
+    <Compile Include="Extension\IExtensionBuilder.cs" />
+    <Compile Include="Extension\IExtensionPoint.cs" />
     <Compile Include="IMessageDialog.cs" />
     <Compile Include="INameConvention.cs" />
-    <Compile Include="Metadata\BodyRepository.cs" />
-    <Compile Include="Metadata\IndexManager.cs" />
-    <Compile Include="Loading\ExtensionSystemLoader.cs" />
-    <Compile Include="Loading\Loaders\ExtensionLoader.cs" />
-    <Compile Include="Loading\Loaders\ExtensionLoaderCollection.cs" />
-    <Compile Include="Loading\Loaders\ExtensionPointLoader.cs" />
-    <Compile Include="Loading\Loaders\IExtensionLoader.cs" />
-    <Compile Include="Loading\Loaders\ILoader.cs" />
-    <Compile Include="Loading\LoaderFactory.cs" />
-    <Compile Include="Metadata\Assets\AddinBodyRecord.cs" />
+    <Compile Include="Metadata\AddinRelationManager.cs" />
+    <Compile Include="Extension\RuntimeExtensionLoader.cs" />
+    <Compile Include="Extension\Loaders\ExtensionLoader.cs" />
+    <Compile Include="Extension\Loaders\ExtensionLoaderCollection.cs" />
+    <Compile Include="Extension\Loaders\ExtensionPointLoader.cs" />
+    <Compile Include="Extension\Loaders\IExtensionLoader.cs" />
+    <Compile Include="Extension\Loaders\ILoader.cs" />
+    <Compile Include="Extension\LoaderFactory.cs" />
+    <Compile Include="Metadata\AddinRecord.Extension.cs" />
     <Compile Include="Metadata\Assets\AddinFilePack.cs" />
-    <Compile Include="Metadata\Assets\AddinIndexRecord.cs" />
-    <Compile Include="Metadata\Assets\AddinRecord.cs" />
+    <Compile Include="Metadata\AddinRecord.Relation.cs" />
+    <Compile Include="Metadata\AddinRecord.cs" />
     <Compile Include="Metadata\Assets\AssemblyFileRecord.cs" />
-    <Compile Include="Metadata\Assets\BaseExtensionPointRecord.cs" />
     <Compile Include="Metadata\Assets\DataFileRecord.cs" />
     <Compile Include="Metadata\Assets\ExtendedAddinRecord.cs" />
     <Compile Include="Metadata\Assets\ExtensionBuilderRecord.cs" />
-    <Compile Include="ExtensionData.cs" />
+    <Compile Include="Extension\ExtensionData.cs" />
     <Compile Include="Metadata\Assets\ExtensionPointRecord.cs" />
     <Compile Include="Metadata\Assets\ExtensionRecord.cs" />
     <Compile Include="Metadata\Assets\ISerializableRecord.cs" />
@@ -173,10 +159,16 @@
     <Compile Include="Resolving\AddinCollision.cs" />
     <Compile Include="Parsing\AddinParser.cs" />
     <Compile Include="Resolving\AddinResolverProxy.cs" />
-    <Compile Include="Resolving\Assets\AddinResolution.cs" />
+    <Compile Include="Resolving\Assets\AddinActivatorResolution.cs" />
+    <Compile Include="Resolving\AddinResolution.cs" />
     <Compile Include="Resolving\AddinResolver.cs" />
     <Compile Include="Resolving\AddinResolver.ProtectedMethods.cs" />
-    <Compile Include="Core\ExtensionBuilderKind.cs" />
+    <Compile Include="Extension\ExtensionBuilderKind.cs" />
+    <Compile Include="Core\AddinHeader.cs" />
+    <Compile Include="Resolving\Assets\AssemblyVersion.cs" />
+    <Compile Include="Core\Dependencies\DependedApplicationAssemblyResolver.cs" />
+    <Compile Include="Resolving\Assets\Platform.cs" />
+    <Compile Include="Resolving\Assets\ResolutionTimeAssemblyResolver.cs" />
     <Compile Include="Resolving\DefaultAddinResolver.cs" />
     <Compile Include="Resolving\AddinCollisionKey.cs" />
     <Compile Include="Resolving\Assets\AssemblyFileResolution.cs" />
@@ -194,31 +186,36 @@
     <Compile Include="Resolving\Assets\ManifestFileResolution.cs" />
     <Compile Include="Resolving\Assets\AddinHeaderResolution.cs" />
     <Compile Include="Resolving\Assets\ParameterResolution.cs" />
+    <Compile Include="Core\Data\DataTransformer.cs" />
     <Compile Include="Resolving\ResolutionContext.cs" />
     <Compile Include="Resolving\ResolutionExtensions.cs" />
+    <Compile Include="Resolving\ResolutionResult.cs" />
     <Compile Include="Resolving\ResolutionStatus.cs" />
     <Compile Include="Resolving\Assets\TypeResolution.cs" />
-    <Compile Include="Parsing\Xml\Assets\ActivationXml.cs" />
+    <Compile Include="Parsing\Xml\Assets\AddinActivatorXml.cs" />
     <Compile Include="Parsing\Xml\Assets\ExtensionBuilderXml.cs" />
-    <Compile Include="Parsing\Xml\Assets\ExtensionDeclarationXml.cs" />
-    <Compile Include="Parsing\Xml\Assets\ExtensionImplementationXml.cs" />
+    <Compile Include="Parsing\Xml\Assets\ExtensionSchemaXml.cs" />
+    <Compile Include="Parsing\Xml\Assets\ExtensionsXml.cs" />
     <Compile Include="Parsing\Xml\Assets\ExtensionPointXml.cs" />
     <Compile Include="Parsing\Xml\Assets\ExtensionXml.cs" />
     <Compile Include="Parsing\Xml\Assets\AddinHeaderXml.cs" />
-    <Compile Include="Parsing\Xml\Assets\XmlManifest.cs" />
+    <Compile Include="Parsing\Xml\XmlAddinManifest.cs" />
     <Compile Include="Parsing\Xml\XmlAddinParser.cs" />
-    <Compile Include="Core\Runtime\RuntimeSystem.cs" />
-    <Compile Include="Core\TypeId.cs" />
+    <Compile Include="Core\Runtime\AddinRuntime.cs" />
+    <Compile Include="Core\AddinTypeHandle.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Core\Storage\LICENSE" />
-    <None Include="Core\Storage\README.md" />
+    <None Include="JointCode.snk" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="doc\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\JointCode.EventBroker\Trunk\JointCode.EventBroker\JointCode.EventBroker.csproj">
+      <Project>{d20db252-1c92-456e-967e-b4d04a7b173a}</Project>
+      <Name>JointCode.EventBroker</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\JointCode.Foundation\Trunk\JointCode.Common\JointCode.Common.csproj">
       <Project>{3D0BAA68-1690-438F-BE49-CCDEB62BBDED}</Project>
       <Name>JointCode.Common</Name>

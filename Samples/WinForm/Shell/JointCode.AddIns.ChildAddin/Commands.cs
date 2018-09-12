@@ -1,5 +1,7 @@
 ﻿using System.Windows.Forms;
+using JointCode.AddIns.AppLib;
 using JointCode.AddIns.ParentAddin;
+using JointCode.AddIns.Shell.AddinsSharedLib;
 
 namespace JointCode.AddIns.ChildAddin
 {
@@ -9,7 +11,10 @@ namespace JointCode.AddIns.ChildAddin
 
         public void Run()
         {
-            MessageBox.Show("ChildAddin loaded!");
+            var cc = new CommonClass();
+            MessageBox.Show(cc.GetLocation(), "ChildAddin Loaded");
+            var np = new NameProvider();
+            MessageBox.Show(np.GetName("ChildAddin"));
         }
 
         #endregion

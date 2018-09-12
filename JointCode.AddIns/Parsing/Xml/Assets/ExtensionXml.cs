@@ -10,6 +10,8 @@
 using System;
 using System.Collections.Generic;
 using JointCode.AddIns.Core;
+using JointCode.AddIns.Extension;
+using JointCode.AddIns.Resolving;
 using JointCode.AddIns.Resolving.Assets;
 using JointCode.Common.Extensions;
 
@@ -29,25 +31,25 @@ namespace JointCode.AddIns.Parsing.Xml.Assets
             _children.Add(item);
         }
 
-        internal bool Introspect(IMessageDialog dialog)
+        internal bool Introspect(ResolutionResult resolutionResult)
 		{
             if (ParentPath == null)
             {
-                dialog.AddError("");
+                resolutionResult.AddError("");
                 return false;
             }
             if (_children == null)
             {
-                dialog.AddError("");
+                resolutionResult.AddError("");
                 return false;
             }
             var result = true;
             foreach (var child in _children)
-                result &= child.Introspect(dialog);
+                result &= child.Introspect(resolutionResult);
             return result;
 		}
 
-        internal bool TryParse(IMessageDialog dialog, AddinResolution addin, out ExtensionResolutionGroup result)
+        internal bool TryParse(ResolutionResult resolutionResult, AddinResolution addin, out ExtensionResolutionGroup result)
 		{
             result = new ExtensionResolutionGroup { ParentPath = ParentPath, RootIsExtensionPoint = RootIsExtensionPoint };
             if (_children != null)
@@ -55,7 +57,7 @@ namespace JointCode.AddIns.Parsing.Xml.Assets
                 foreach (var child in _children)
                 {
                     ExtensionResolution ex;
-                    if (!child.TryParse(dialog, addin, null, out ex))
+                    if (!child.TryParse(resolutionResult, addin, null, out ex))
                         return false;
                     result.AddChild(ex);
                 }
@@ -79,30 +81,30 @@ namespace JointCode.AddIns.Parsing.Xml.Assets
             _children.Add(item);
         }
     	
-    	internal bool Introspect(IMessageDialog dialog)
+    	internal bool Introspect(ResolutionResult resolutionResult)
     	{
-            var result = Head.Introspect(dialog);
+            var result = Head.Introspect(resolutionResult);
             if (_children != null)
             {
                 foreach (var child in _children)
-                    result &= child.Introspect(dialog);
+                    result &= child.Introspect(resolutionResult);
             }
             return result;
 		}
 
-        internal bool TryParse(IMessageDialog dialog, AddinResolution addin, Resolvable parent, out ExtensionResolution result)
+        internal bool TryParse(ResolutionResult resolutionResult, AddinResolution addin, Resolvable parent, out ExtensionResolution result)
         {
             result = null;
             ExtensionHeadResolution head;
-            if (!Head.TryParse(dialog, addin, out head))
+            if (!Head.TryParse(resolutionResult, addin, out head))
                 return false;
-            result = new NewExtensionResolution(addin) { Data = new ExtensionDataResolution(Data.Items), Head = head, Parent = parent };
+            result = new NewOrUpdatedExtensionResolution(addin) { Data = (Data != null && Data.Items != null ? new ExtensionDataResolution(Data.Items) : null), Head = head, Parent = parent };
             if (_children != null)
             {
                 foreach (var child in _children)
                 {
                     ExtensionResolution ex;
-                    if (!child.TryParse(dialog, addin, result, out ex))
+                    if (!child.TryParse(resolutionResult, addin, result, out ex))
                         return false;
                     result.AddChild(ex);
                 }
@@ -117,28 +119,28 @@ namespace JointCode.AddIns.Parsing.Xml.Assets
 
         internal string ExtensionBuilderPath { get; set; }
 
-        internal bool Introspect(IMessageDialog dialog)
+        internal bool Introspect(ResolutionResult resolutionResult)
         {
             var result = true;
-            if (!Id.IsNullOrWhiteSpace() && Id.Contains(SysConstants.PathSeparator))
+            if (!Id.IsNullOrWhiteSpace() && Id.Contains(SysConstants.PathSeparatorString))
             {
-                dialog.AddError("");
+                resolutionResult.AddError("The Id property of an extension can not contains slash (/)!");
                 result = false;
             }
-            if (!SiblingId.IsNullOrWhiteSpace() && SiblingId.Contains(SysConstants.PathSeparator))
+            if (!SiblingId.IsNullOrWhiteSpace() && SiblingId.Contains(SysConstants.PathSeparatorString))
             {
-                dialog.AddError("");
+                resolutionResult.AddError("The SiblingId property of an extension can not contains slash (/)!");
                 result = false;
             }
             if (ExtensionBuilderPath.IsNullOrWhiteSpace())
             {
-                dialog.AddError("");
+                resolutionResult.AddError("The extension builder path of an extension can not be null or empty!");
                 result = false;
             }
             return result;
         }
 
-        internal bool TryParse(IMessageDialog dialog, AddinResolution addin, out ExtensionHeadResolution result)
+        internal bool TryParse(ResolutionResult resolutionResult, AddinResolution addin, out ExtensionHeadResolution result)
         {
             result = new ExtensionHeadResolution
             {

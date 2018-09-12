@@ -33,6 +33,11 @@ namespace JointCode.AddIns.Core.Helpers
             return null;
         }
 
+        internal static string GetMatchingAttribueValue(XmlAttribute attrib, string attribName)
+        {
+            return attrib.Name == attribName ? attrib.InnerText.Trim() : null;
+        }
+
         internal static string GetAttribueValue(XmlAttribute attrib)
         {
             return attrib.InnerText.Trim();
@@ -56,6 +61,11 @@ namespace JointCode.AddIns.Core.Helpers
         internal static string GetMatchingNodeValue(XmlNode node, string nodeName)
         {
             return node.LocalName == nodeName ? node.InnerText : null;
+        }
+
+        internal static bool IsMatchingNode(XmlNode node, string nodeName)
+        {
+            return node.LocalName == nodeName;
         }
 
         internal static string GetNodeValue(XmlNode node)

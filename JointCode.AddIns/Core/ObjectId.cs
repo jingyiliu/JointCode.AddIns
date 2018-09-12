@@ -8,14 +8,17 @@
 //
 
 using System;
-using System.IO;
-using JointCode.Common.IO;
 
 namespace JointCode.AddIns.Core
 {
     public class ObjectId : IEquatable<ObjectId>
     {
-        public Guid Guid { get; protected internal set; }
+        internal Guid _guid;
+        public Guid Guid
+        {
+            get { return _guid; }
+            protected internal set { _guid = value; }
+        }
         public int Uid { get; protected internal set; }
 
         /// <summary>
@@ -24,10 +27,7 @@ namespace JointCode.AddIns.Core
         /// is the same to the requested (target) addin.
         /// An <see cref="ObjectId"/> created by the user code manually at runtime does not have a <see cref="Tag"/>.
         /// </summary>
-        internal virtual object Tag
-        {
-            get { return null; }
-        }
+        public virtual object Tag { get { return null; } }
 
         public bool Equals(ObjectId other)
         {
@@ -64,34 +64,6 @@ namespace JointCode.AddIns.Core
         public override int GetHashCode()
         {
             throw new NotImplementedException();
-        }
-    }
-
-    public class AddinId : ObjectId
-    {
-        readonly object _ownerTag;
-
-        public AddinId()
-        {
-            _ownerTag = new object();
-            Uid = UidProvider.InvalidAddinUid;
-        }
-
-        internal override object Tag
-        {
-            get { return _ownerTag; }
-        }
-
-        internal void Read(Stream reader)
-        {
-            Guid = reader.ReadGuid();
-            Uid = reader.ReadInt32();
-        }
-
-        internal void Write(Stream writer)
-        {
-            writer.WriteGuid(Guid);
-            writer.WriteInt32(Uid);
         }
     }
 }

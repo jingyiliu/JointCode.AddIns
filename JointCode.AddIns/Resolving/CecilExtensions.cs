@@ -8,52 +8,64 @@
 //
 
 using System;
+using JointCode.AddIns.Resolving.Assets;
 using Mono.Cecil;
 
 namespace JointCode.AddIns.Resolving
 {
     static class CecilExtensions
     {
-        // true = typeof (BaseResolution).IsAssignableFrom(typeof (ExtensionBuilderResolution));
-        internal static bool IsAssignableFrom(this TypeDefinition self, TypeDefinition subType)
+        // compares whether two types equals to each other, ignoring where they are loaded from (these two types might come from assemblies located at two different folders).
+        internal static bool EqualsTo(this TypeDefinition self, TypeDefinition other)
         {
-            if (self.IsValueType || self.IsSealed)
-                return false;
-            
-            if (ReferenceEquals(self, subType))
+            if (ReferenceEquals(self, other)) // how to determine that 2 TypeDefinition equals?
                 return true;
-
-            if (self.IsInterface)
-                return subType.ImplementsInterface(self);
-
-            if (self.IsClass)
-                return IsSubclassOf(self, subType);
-
-            return false;
-        }
-
-        /// <summary>
-        /// Determines whether the <see cref="subType"/> is a subclass of <see cref="self"/>.
-        /// Notes that the <see cref="self"/> must be a class.
-        /// </summary>
-        internal static bool IsSubclassOf(this TypeDefinition self, TypeDefinition subType)
-        {
-            if (!self.IsClass)
-                throw new InvalidOperationException("");
-            if (!subType.IsClass)
-                return false;
-            var type = subType;
-            while (true)
+            if (self.MetadataToken == other.MetadataToken) // check the equality by type metadatatokens and assembly names
             {
-                if (ReferenceEquals(type, self)) // how to determine that 2 TypeDefinition equals?
+                var matchingAssemblyKey = CecilAssemblyKey.Create(self.Module.Assembly.Name);
+                var baseAssemblyKey = CecilAssemblyKey.Create(other.Module.Assembly.Name);
+                if (baseAssemblyKey.Equals(matchingAssemblyKey))
                     return true;
-                var baseTypeRef = type.BaseType;
-                if (baseTypeRef == null)
-                    break;
-                type = baseTypeRef.SafeResolve();
             }
             return false;
         }
+
+        //// true = typeof (BaseResolution).IsAssignableFrom(typeof (ExtensionBuilderResolution));
+        //internal static bool IsAssignableFrom(this TypeDefinition self, TypeDefinition subType)
+        //{
+        //    if (self.IsValueType || self.IsSealed)
+        //        return false;
+        //    if (ReferenceEquals(self, subType))
+        //        return true;
+        //    if (self.IsInterface)
+        //        return subType.ImplementsInterface(self);
+        //    if (self.IsClass)
+        //        return IsSubclassOf(self, subType);
+        //    return false;
+        //}
+
+        ///// <summary>
+        ///// Determines whether the <see cref="subType"/> is a subclass of <see cref="self"/>.
+        ///// Notes that the <see cref="self"/> must be a class.
+        ///// </summary>
+        //internal static bool IsSubclassOf(this TypeDefinition self, TypeDefinition subType)
+        //{
+        //    if (!self.IsClass)
+        //        throw new InvalidOperationException("");
+        //    if (!subType.IsClass)
+        //        return false;
+        //    var type = subType;
+        //    while (true)
+        //    {
+        //        if (ReferenceEquals(type, self)) // how to determine that 2 TypeDefinition equals?
+        //            return true;
+        //        var baseTypeRef = type.BaseType;
+        //        if (baseTypeRef == null)
+        //            break;
+        //        type = baseTypeRef.SafeResolve();
+        //    }
+        //    return false;
+        //}
 
         /// <summary>
         /// Determines whether the <see cref="self"/> implements the specified <see cref="@interface"/>.
@@ -62,7 +74,7 @@ namespace JointCode.AddIns.Resolving
         internal static bool ImplementsInterface(this TypeDefinition self, TypeDefinition @interface)
         {
             if (!@interface.IsInterface)
-                throw new InvalidOperationException("");
+                throw new InvalidOperationException("The parameter @interface is supposed to be an interface!");
 
             // @self is an interface
             if (self.IsInterface)
@@ -92,8 +104,9 @@ namespace JointCode.AddIns.Resolving
 
         static bool DoImplementsInterface(TypeDefinition subInterface, TypeDefinition baseInterface)
         {
-            if (ReferenceEquals(subInterface, baseInterface)) // how to determine that 2 TypeDefinition equals?
+            if (subInterface.EqualsTo(baseInterface))
                 return true;
+
             if (subInterface.Interfaces == null)
                 return false;
             foreach (var iface in subInterface.Interfaces)
@@ -113,18 +126,6 @@ namespace JointCode.AddIns.Resolving
         internal static TypeReference GetGenericTypeDefinition(this TypeReference self)
         {
             return !self.IsGenericInstance ? null : self.GetElementType();
-        }
-
-        // determine whether the given assembly is provided by runtime (.net or mono) or application which can be referenced any way.
-        internal static bool IsProbableAssembly(this AssemblyNameReference self, ReaderParameters cecilReaderParameters)
-        {
-            return cecilReaderParameters.AssemblyResolver.Resolve(self) != null;
-        }
-
-        // determine whether the given assembly is provided by runtime (.net or mono) or application which can be referenced any way.
-        internal static bool IsProbableAssembly(this AssemblyNameDefinition self, ReaderParameters cecilReaderParameters)
-        {
-            return cecilReaderParameters.AssemblyResolver.Resolve(self) != null;
         }
 
         internal static TypeDefinition SafeResolve(this TypeReference self)

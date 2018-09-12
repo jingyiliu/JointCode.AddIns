@@ -1,0 +1,7 @@
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaAddin\bin\Release\addin.manifest
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaAddin\bin\Release\JointCode.AddIns.SchemaAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaAddin\bin\Release\JointCode.AddIns.SchemaAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaAddin\obj\Release\JointCode.AddIns.SchemaAddin.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaAddin\obj\Release\JointCode.AddIns.SchemaAddin.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaAddin\obj\Release\JointCode.AddIns.SchemaAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaAddin\obj\Release\JointCode.AddIns.SchemaAddin.pdb

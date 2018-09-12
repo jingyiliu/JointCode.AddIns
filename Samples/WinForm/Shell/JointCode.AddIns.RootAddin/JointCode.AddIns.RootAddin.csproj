@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddinActivator.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="IRootCommand.cs" />
     <Compile Include="MenuStripExtensionPoint.cs" />

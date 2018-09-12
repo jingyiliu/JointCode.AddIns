@@ -1,0 +1,12 @@
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\bin\Release\JointCode.AddIns.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\bin\Release\JointCode.AddIns.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\bin\Release\JointCode.Common.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\bin\Release\JointCode.EventBroker.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\bin\Release\Mono.Cecil.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\bin\Release\JointCode.EventBroker.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\bin\Release\JointCode.Common.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\obj\Release\JointCode.AddIns.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\obj\Release\JointCode.AddIns.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\obj\Release\JointCode.AddIns.csproj.CopyComplete
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\obj\Release\JointCode.AddIns.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns\obj\Release\JointCode.AddIns.pdb

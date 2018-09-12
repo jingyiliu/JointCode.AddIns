@@ -10,18 +10,56 @@
 using System;
 using System.Collections.Generic;
 using JointCode.AddIns.Core;
+using JointCode.AddIns.Core.Data;
 using JointCode.AddIns.Core.Runtime;
+using JointCode.AddIns.Core.Storage;
 using JointCode.AddIns.Resolving.Assets;
 
 namespace JointCode.AddIns.Resolving
 {
     class ResolutionContext : IDisposable
     {
-    	readonly Dictionary<Guid, AddinResolution> _guid2Addins = new Dictionary<Guid, AddinResolution>();
+        struct TypeKey
+        {
+            readonly string _assemblyFullName;
+            readonly int _typeMetadataToken;
+
+            internal TypeKey(string assemblyFullName, int typeMetadataToken)
+            {
+                _assemblyFullName = assemblyFullName;
+                _typeMetadataToken = typeMetadataToken;
+            }
+
+            internal string AssemblyFullName { get { return _assemblyFullName; } }
+            internal int TypeMetadataToken { get { return _typeMetadataToken; } }
+
+            public override bool Equals(object obj)
+            {
+                if (obj == null)
+                    return false;
+                try
+                {
+                    var val = (TypeKey) obj;
+                    return val._typeMetadataToken == _typeMetadataToken && val._assemblyFullName == _assemblyFullName;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            public override int GetHashCode()
+            {
+                return _assemblyFullName.GetHashCode() ^ _typeMetadataToken;
+            }
+        }
+
+        readonly Dictionary<TypeKey, DataTransformer> _typeKey2Transformers = new Dictionary<TypeKey, DataTransformer>();
+        readonly Dictionary<Guid, AddinResolution> _guid2Addins = new Dictionary<Guid, AddinResolution>();
     	readonly Dictionary<AssemblyKey, AssemblyResolutionSet> _key2AssemblySets = new Dictionary<AssemblyKey, AssemblyResolutionSet>();
     	
         readonly Dictionary<string, ExtensionBuilderResolution> _path2ExtensionBuilders = new Dictionary<string, ExtensionBuilderResolution>();
-        readonly Dictionary<string, ExtensionPointResolution> _id2ExtensionPoints = new Dictionary<string, ExtensionPointResolution>();
+        readonly Dictionary<string, ExtensionPointResolution> _path2ExtensionPoints = new Dictionary<string, ExtensionPointResolution>();
         readonly Dictionary<string, ExtensionResolution> _path2Extensions = new Dictionary<string, ExtensionResolution>();
 
         readonly Dictionary<int, ExtensionBuilderResolution> _uid2ExtensionBuilders = new Dictionary<int, ExtensionBuilderResolution>();
@@ -32,17 +70,30 @@ namespace JointCode.AddIns.Resolving
         /// </summary>
         internal IEnumerable<AssemblyResolutionSet> AssemblySets { get { return _key2AssemblySets.Values; } }
 
+        internal void RegisterDataTransformer(string assemblyFullName, int typeMetadataToken, DataTransformer transformer)
+        {
+            _typeKey2Transformers.Add(new TypeKey(assemblyFullName, typeMetadataToken), transformer);
+        }
+
+        internal bool TryGetDataTransformer(string assemblyFullName, int typeMetadataToken,
+            out DataTransformer transformer)
+        {
+            return _typeKey2Transformers.TryGetValue(
+                new TypeKey(assemblyFullName, typeMetadataToken),
+                out transformer);
+        }
+
         #region Addin
         public void RegisterAddin(ObjectId addinId, AddinResolution addin)
         {
             _guid2Addins.Add(addinId.Guid, addin);
         }
         
-        public bool TryRegisterAddin(IMessageDialog dialog, ObjectId addinId, AddinResolution newAddin, out AddinResolution existingAddin)
+        public bool TryRegisterAddin(ResolutionResult resolutionResult, ObjectId addinId, AddinResolution newAddin, out AddinResolution existingAddin)
         {
             if (_guid2Addins.TryGetValue(addinId.Guid, out existingAddin))
             {
-                dialog.AddError(string.Format("An addin with the identity [{0}] already exists!", addinId.Guid));
+                resolutionResult.AddError(string.Format("An addin with the identity [{0}] already exists!", addinId.Guid));
                 return false;
             }
             _guid2Addins.Add(addinId.Guid, newAddin);
@@ -59,34 +110,34 @@ namespace JointCode.AddIns.Resolving
         	return _guid2Addins.TryGetValue(addinId.Guid, out addin);
         }
         #endregion
-        
+
         #region Assembly
-        //public void RegisterApplicationAssembly(IMessageDialog dialog, AssemblyResolution assembly)
+        //public void RegisterApplicationAssembly(ResolutionResult resolutionResult, AssemblyResolution assembly)
         //{
         //    TryLoadAndRegisterAssembly(dialog, assembly);
         //}
-        
-        //public bool TryRegisterApplicationAssembly(IMessageDialog dialog, string assembly)
+
+        //public bool TryRegisterApplicationAssembly(ResolutionResult resolutionResult, string assembly)
         //{
         //    var asm = new AssemblyResolution(assembly);
         //    return TryLoadAndRegisterAssembly(dialog, asm);
         //}
-        
-        public void RegisterAssembly(IMessageDialog dialog, AssemblyResolution assembly)
+
+        public void RegisterAssembly(ResolutionResult resolutionResult, AssemblyResolution assembly)
         {
-        	TryLoadAndRegisterAssembly(dialog, assembly);
+        	TryLoadAndRegisterAssembly(resolutionResult, assembly);
         }
         
-        public bool TryRegisterAssembly(IMessageDialog dialog, AssemblyResolution assembly)
+        public bool TryRegisterAssembly(ResolutionResult resolutionResult, AssemblyResolution assembly)
         {
-            return TryLoadAndRegisterAssembly(dialog, assembly);
+            return TryLoadAndRegisterAssembly(resolutionResult, assembly);
         }
         
-        bool TryLoadAndRegisterAssembly(IMessageDialog dialog, AssemblyResolution assembly)
+        bool TryLoadAndRegisterAssembly(ResolutionResult resolutionResult, AssemblyResolution assembly)
         {
         	if (!assembly.TryLoad()) 
 			{
-        		dialog.AddError("");
+			    resolutionResult.AddError("Failed to load assembly file " + assembly.AssemblyFile.FilePath);
 				return false;
 			}
         	
@@ -97,7 +148,7 @@ namespace JointCode.AddIns.Resolving
 				_key2AssemblySets[assembly.AssemblyKey] = assemblySet;
 			}
 
-            //if (assembly.AssemblyFile.Uid != UidProvider.InvalidAssemblyUid) 
+            //if (assembly.AssemblyFile.Uid != UidStorage.InvalidAssemblyUid) 
             //    _uid2AssemblySets.Add(assembly.AssemblyFile.Uid, assemblySet);
 			
 			assemblySet.Add(assembly);
@@ -107,11 +158,14 @@ namespace JointCode.AddIns.Resolving
         
         public void UnregisterAssembly(AssemblyResolution assembly)
         {
+            if (assembly.AssemblyKey == null)
+                return;
+
         	AssemblyResolutionSet assemblySet;
             if (!_key2AssemblySets.TryGetValue(assembly.AssemblyKey, out assemblySet))
                 return;
 
-            //if (assembly.AssemblyFile.Uid == UidProvider.InvalidAssemblyUid) 
+            //if (assembly.AssemblyFile.Uid == UidStorage.InvalidAssemblyUid) 
             //{
             //    if (!_key2AssemblySets.TryGetValue(assembly.AssemblyKey, out assemblySet))
             //        return;
@@ -125,16 +179,18 @@ namespace JointCode.AddIns.Resolving
         	if (assemblySet.Remove(assembly) && assemblySet.Count == 0) 
         	{
         		_key2AssemblySets.Remove(assembly.AssemblyKey);
-                //if (assembly.AssemblyFile.Uid != UidProvider.InvalidAssemblyUid) 
+                //if (assembly.AssemblyFile.Uid != UidStorage.InvalidAssemblyUid) 
                 //    _uid2AssemblySets.Remove(assembly.AssemblyFile.Uid);
         	}
         }
 
-        // get assembly references of @assembly that requires resolution at the runtime, which is not provided runtime or application itself.
-        public bool TryGetRequiredAssemblyReferences(IMessageDialog dialog, AssemblyResolution assembly, out List<AssemblyResolutionSet> result)
+        // Gets the required assembly references of @assembly that needs resolution. 
+        // By required, we mean assemblies that is not provided by runtime (.net, mono, etc) or the JointCode.AddIns.dll itself. 
+        // By default it refers to the GAC assemblies.
+        public bool TryGetRequiredAssemblyReferences(ResolutionResult resolutionResult, AssemblyResolution assembly, out List<AssemblyResolutionSet> result)
         {
         	var assemblyKeys = assembly.GetRequiredAssemblyReferences();
-            if (assemblyKeys == null)  // all referenced assemblies are provided by runtime or application itself.
+            if (assemblyKeys == null)  // get all referenced assemblies that is required.
         	{
         		result = null;
         		return true;
@@ -150,7 +206,7 @@ namespace JointCode.AddIns.Resolving
         		}
         		else
         		{
-                    dialog.AddError("");
+		            resolutionResult.AddError("!!!!!!!!!!!");
                     return false;
         		}
         	}
@@ -163,14 +219,14 @@ namespace JointCode.AddIns.Resolving
             return _key2AssemblySets.TryGetValue(assemblyKey, out assemblySet);
         }
 
-        /// <summary>
-        /// Tries to get a probable assembly (a runtime or application assembly).
-        /// </summary>
-        public bool TryGetProbableAssembly(string assemblyName, out AssemblyResolution result)
-        {
-            result = AssemblyResolution.GetProbableAssembly(assemblyName);
-            return result != null;
-        }
+        ///// <summary>
+        ///// Tries to get a probable assembly (a runtime or application assembly).
+        ///// </summary>
+        //public bool TryGetProbableAssembly(string assemblyName, out AssemblyResolution result)
+        //{
+        //    result = AssemblyResolution.GetProbableAssembly(assemblyName);
+        //    return result != null;
+        //}
         #endregion
         
         #region Type
@@ -282,35 +338,35 @@ namespace JointCode.AddIns.Resolving
         #region ExtensionPoint
         public void RegisterExtensionPoint(ExtensionPointResolution extensionPoint)
         {
-        	_id2ExtensionPoints.Add(extensionPoint.Id, extensionPoint);
+        	_path2ExtensionPoints.Add(extensionPoint.Path, extensionPoint);
         }
 
         // returns null if sucessful, otherwise return an existing ExtensionPointResolution
-        public bool TryRegisterExtensionPoint(IMessageDialog dialog, ExtensionPointResolution newExtensionPoint, 
+        public bool TryRegisterExtensionPoint(ResolutionResult resolutionResult, ExtensionPointResolution newExtensionPoint, 
             out ExtensionPointResolution existingExtensionPoint)
         {
-            if (_id2ExtensionPoints.TryGetValue(newExtensionPoint.Id, out existingExtensionPoint))
+            if (_path2ExtensionPoints.TryGetValue(newExtensionPoint.Path, out existingExtensionPoint))
             {
-                dialog.AddError("");
+                resolutionResult.AddError("@@@@@@@@@@@");
                 return false;
             }
-            _id2ExtensionPoints.Add(newExtensionPoint.Id, newExtensionPoint);
+            _path2ExtensionPoints.Add(newExtensionPoint.Path, newExtensionPoint);
             return true;
         }
         
         public void UnregisterExtensionPoint(ExtensionPointResolution extensionPoint)
         {
-            _id2ExtensionPoints.Remove(extensionPoint.Id);
+            _path2ExtensionPoints.Remove(extensionPoint.Path);
         }
         
-        public ExtensionPointResolution GetExtensionPoint(string extensionPointId)
+        public ExtensionPointResolution GetExtensionPoint(string extensionPointPath)
         {
-            return _id2ExtensionPoints[extensionPointId];
+            return _path2ExtensionPoints[extensionPointPath];
         }
         
-        public bool TryGetExtensionPoint(IMessageDialog dialog, string extensionPointId, out ExtensionPointResolution result)
+        public bool TryGetExtensionPoint(ResolutionResult resolutionResult, string extensionPointPath, out ExtensionPointResolution result)
         {
-            return _id2ExtensionPoints.TryGetValue(extensionPointId, out result);
+            return _path2ExtensionPoints.TryGetValue(extensionPointPath, out result);
         }
         #endregion
 
@@ -318,17 +374,17 @@ namespace JointCode.AddIns.Resolving
         public void RegisterExtensionBuilder(ExtensionBuilderResolution extensionBuilder)
         {
             _path2ExtensionBuilders.Add(extensionBuilder.Path, extensionBuilder);
-            if (extensionBuilder.Uid != UidProvider.InvalidExtensionBuilderUid)
+            if (extensionBuilder.Uid != UidStorage.InvalidExtensionBuilderUid)
                 _uid2ExtensionBuilders.Add(extensionBuilder.Uid, extensionBuilder);
         }
 
         // returns null if sucessful, otherwise return an existing ExtensionPointResolution
-        public bool TryRegisterExtensionBuilder(IMessageDialog dialog, ExtensionBuilderResolution newExtensionBuilder, 
+        public bool TryRegisterExtensionBuilder(ResolutionResult resolutionResult, ExtensionBuilderResolution newExtensionBuilder, 
             out ExtensionBuilderResolution existingExtensionBuilder)
         {
             if (_path2ExtensionBuilders.TryGetValue(newExtensionBuilder.Path, out existingExtensionBuilder))
             {
-                dialog.AddError("");
+                resolutionResult.AddError("&&&&&&&&&&&&&&&&");
                 return false;
             }
             _path2ExtensionBuilders.Add(newExtensionBuilder.Path, newExtensionBuilder);
@@ -338,7 +394,7 @@ namespace JointCode.AddIns.Resolving
         public void UnregisterExtensionBuilder(ExtensionBuilderResolution extensionBuilder)
         {
             _path2ExtensionBuilders.Remove(extensionBuilder.Path);
-            if (extensionBuilder.Uid != UidProvider.InvalidExtensionBuilderUid)
+            if (extensionBuilder.Uid != UidStorage.InvalidExtensionBuilderUid)
                 _uid2ExtensionBuilders.Remove(extensionBuilder.Uid);
         }
 
@@ -347,22 +403,23 @@ namespace JointCode.AddIns.Resolving
             return _path2ExtensionBuilders[extensionBuilderPath];
         }
         
-        public bool TryGetExtensionBuilder(IMessageDialog dialog, string extensionBuilderPath, out ExtensionBuilderResolution extensionBuilder)
+        public bool TryGetExtensionBuilder(ResolutionResult resolutionResult, string extensionBuilderPath, out ExtensionBuilderResolution extensionBuilder)
         {
             return _path2ExtensionBuilders.TryGetValue(extensionBuilderPath, out extensionBuilder);
         }
 
-        public bool TryGetExtensionBuilder(IMessageDialog dialog, int extensionBuilderUid, out ExtensionBuilderResolution extensionBuilder)
+        public bool TryGetExtensionBuilder(ResolutionResult resolutionResult, int extensionBuilderUid, out ExtensionBuilderResolution extensionBuilder)
         {
             return _uid2ExtensionBuilders.TryGetValue(extensionBuilderUid, out extensionBuilder);
         }
 
+        // 因为直接受影响的插件的 Extension.Header 中包含 ExtensionBuilderUid 属性，因此被更新 (updated) 插件需要先注册这个
         public void RegisterExtensionBuilderPath(int extensionBuilderUid, string extensionBuilderPath)
         {
             _uid2UpdatedExtensionBuilderPaths.Add(extensionBuilderUid, extensionBuilderPath);
         }
 
-        public bool TryGetExtensionBuilderPath(IMessageDialog dialog, int extensionBuilderUid, out string extensionBuilderPath)
+        public bool TryGetExtensionBuilderPath(ResolutionResult resolutionResult, int extensionBuilderUid, out string extensionBuilderPath)
         {
             return _uid2UpdatedExtensionBuilderPaths.TryGetValue(extensionBuilderUid, out extensionBuilderPath);
         }
@@ -375,11 +432,11 @@ namespace JointCode.AddIns.Resolving
         }
 
         // returns null if sucessful, otherwise return an existing ExtensionPointResolution
-        public bool TryRegisterExtension(IMessageDialog dialog, ExtensionResolution newExtension, out ExtensionResolution existingExtension)
+        public bool TryRegisterExtension(ResolutionResult resolutionResult, ExtensionResolution newExtension, out ExtensionResolution existingExtension)
         {
             if (_path2Extensions.TryGetValue(newExtension.Head.Path, out existingExtension))
             {
-                dialog.AddError("");
+                resolutionResult.AddError("##############");
                 return false;
             }
             _path2Extensions.Add(newExtension.Head.Path, newExtension);
@@ -396,7 +453,7 @@ namespace JointCode.AddIns.Resolving
             return _path2Extensions[extensionPath];
         }
         
-        public bool TryGetExtension(IMessageDialog dialog, string extensionPath, out ExtensionResolution extension)
+        public bool TryGetExtension(ResolutionResult resolutionResult, string extensionPath, out ExtensionResolution extension)
         {
             return _path2Extensions.TryGetValue(extensionPath, out extension);
         }

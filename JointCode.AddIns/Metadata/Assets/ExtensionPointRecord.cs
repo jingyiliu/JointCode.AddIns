@@ -7,24 +7,46 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
+using JointCode.AddIns.Core.Helpers;
+using JointCode.AddIns.Extension;
+using JointCode.AddIns.Resolving.Assets;
+using JointCode.Common;
+using JointCode.Common.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using JointCode.Common;
-using JointCode.Common.IO;
 
 namespace JointCode.AddIns.Metadata.Assets
 {
-    class ExtensionPointRecord : ISerializableRecord, IEquatable<ExtensionPointRecord>
+    class ExtensionPointRecord : ISerializableRecord, IEquatable<ExtensionPointRecord>, IExtensionPointPathInfo
     {
         internal static MyFunc<ExtensionPointRecord> Factory = () => new ExtensionPointRecord();
+        ExtensionPointDescription _description;
         protected List<ExtensionBuilderRecord> _children;
+
+        internal ExtensionPointDescription ExtensionPointDescription
+        {
+            get
+            {
+                if (_description != null)
+                    return _description;
+
+                _description =
+                    new ExtensionPointDescription {Name = Name, Description = Description, TypeName = TypeName, Loaded = Loaded};
+                return _description;
+            }
+        }
+
+        internal bool Loaded { get; set; }
+        internal AddinRecord AddinRecord { get; set; }
+
+        internal string Path { get { return ExtensionHelper.GetExtensionPointPath(this); } }
 
         // Guid 可以在不同应用程序之间唯一地标识一个 Addin，而由不同 Addin 提供的所有 ExtensionPoint 在一个应用程序中必须唯一。
         /// <summary>
-        /// Gets the id of <see cref="IExtensionPoint"/> that uniquely identify an <see cref="IExtensionPoint"/> within an application.
+        /// Gets the name of <see cref="IExtensionPoint"/> that uniquely identify an <see cref="IExtensionPoint"/> within an application.
         /// </summary>
-        internal string Id { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the unique identifier of an <see cref="ExtensionPointRecord"/>.
@@ -57,7 +79,7 @@ namespace JointCode.AddIns.Metadata.Assets
                 _children = new List<ExtensionBuilderRecord>(childCount);
                 for (int i = 0; i < childCount; i++)
                 {
-                    var child = ExtensionBuilderRecordHelper.Read(reader, Id, Id);
+                    var child = ExtensionBuilderRecordHelper.Read(reader, Path, Name);
                     child.Read(reader);
                     _children.Add(child);
                 }
@@ -66,7 +88,7 @@ namespace JointCode.AddIns.Metadata.Assets
 
         protected void DoRead(Stream reader)
         {
-            Id = reader.ReadString();
+            Name = reader.ReadString();
             Uid = reader.ReadInt32();
             Description = reader.ReadString();
             AssemblyUid = reader.ReadInt32();
@@ -91,7 +113,7 @@ namespace JointCode.AddIns.Metadata.Assets
 
         void DoWrite(Stream writer)
         {
-            writer.WriteString(Id);
+            writer.WriteString(Name);
             writer.WriteInt32(Uid);
             writer.WriteString(Description);
             writer.WriteInt32(AssemblyUid);
@@ -102,7 +124,7 @@ namespace JointCode.AddIns.Metadata.Assets
 
         public bool Equals(ExtensionPointRecord other)
         {
-            return Id == other.Id;
+            return Name == other.Name;
         }
 
         #endregion

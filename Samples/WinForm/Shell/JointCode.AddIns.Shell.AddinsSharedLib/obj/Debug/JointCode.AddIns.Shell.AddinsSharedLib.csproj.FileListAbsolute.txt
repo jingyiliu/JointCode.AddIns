@@ -1,0 +1,16 @@
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.TestLib\bin\Debug\JointCode.AddIns.Shell.AddinsSharedLib.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.TestLib\bin\Debug\JointCode.AddIns.Shell.AddinsSharedLib.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.TestLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.csprojResolveAssemblyReference.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.TestLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.csproj.CoreCompileInputs.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.TestLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.TestLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\bin\Debug\JointCode.AddIns.Shell.AddinsSharedLib.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\bin\Debug\JointCode.AddIns.Shell.AddinsSharedLib.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.csproj.CoreCompileInputs.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\bin\Debug\JointCode.AddIns.Shell.AddinsSharedLib.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\bin\Debug\JointCode.AddIns.Shell.AddinsSharedLib.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.Shell.AddinsSharedLib\obj\Debug\JointCode.AddIns.Shell.AddinsSharedLib.pdb

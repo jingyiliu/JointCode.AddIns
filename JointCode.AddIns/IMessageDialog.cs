@@ -18,15 +18,33 @@ namespace JointCode.AddIns
     /// </summary>
     public interface IMessageDialog
     {
-        bool HasMessage { get; }
-
-        void SetProgress(double progress);
-
-        void AddWarning(string message);
-        void AddError(string message);
+        //bool HasMessage { get; }
+        //void SetProgress(double progress);
+        //void AddMessage(string message);
+        //void AddWarning(string message);
+        //void AddError(string message);
         //void AddError(string message, Exception exception);
 
-        void Show();
-        bool Confirm();
+        /// <summary>
+        /// Show a message dialog
+        /// </summary>
+        void Show(string message);
+
+        /// <summary>
+        /// Show a message dialog
+        /// </summary>
+        void Show(string message, string title);
+
+        /// <summary>
+        /// Show a confirm dialog
+        /// </summary>
+        /// <returns></returns>
+        bool Confirm(string message);
+
+        /// <summary>
+        /// Show a confirm dialog
+        /// </summary>
+        /// <returns></returns>
+        bool Confirm(string message, string title);
     }
 }

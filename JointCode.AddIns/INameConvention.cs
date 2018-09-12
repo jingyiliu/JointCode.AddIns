@@ -8,49 +8,28 @@
 //
 
 using System;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns
 {
-    // One extension root type (e.g, System.Windows.Forms.MenuStrip) can only map to an IExtensionPoint<TExtension, TRoot> 
-    // implementation (e.g, class MenuStripExtensionPoint : IExtensionPoint<ToolStripItem, MenuStrip>), and one 
-    // IExtensionPoint<TExtension, TRoot> implementation maps to an identification name. 
-    // So, if we want to map a same extension root type to 2 different identification name, there is no direct way. However,
-    // we can bypass this restriction by design a subclass to inherit from the extension root type (e.g, class MyMenuStrip : MenuStrip),
-    // then we provide a new IExtensionPoint<ToolStripItem, MyMenuStrip> implementation (say class MenuStripPoint), and use
-    // that implementation to get a new identification name.
-
-    class DefaultNameConvention : INameConvention
-    {
-        public string GetExtensionPointName(Type extensionRootType)
-        {
-            return extensionRootType.Name;
-        }
-
-        public string GetExtensionBuilderName(Type extensionBuilderType)
-        {
-            return extensionBuilderType.Name.EndsWith("ExtensionBuilder")
-                ? extensionBuilderType.Name.Remove(extensionBuilderType.Name.Length - "ExtensionBuilder".Length)
-                : extensionBuilderType.Name;
-        }
-    }
-
-	/// <summary>
+    /// <summary>
     /// Used to map a type name to an identification name, which is unique within an application.
 	/// </summary>
     public interface INameConvention
     {
         /// <summary>
         /// Gets the name of the extension point.
+        /// The extension point name provided in the addin manifest can comply with the name convention, or may not comply with the name convention.
         /// </summary>
-        /// <param name="extensionRootType">The type of extension root (the second generic parameter of an 
-        /// <see cref="IExtensionPoint{TExtension, TExtensionRoot}"/> implementation).</param>
+        /// <param name="extensionRootType">The extension root type of extension point (an  <see cref="IExtensionPoint{TExtension, TExtensionRoot}"/> implementation).</param>
         /// <returns></returns>
     	string GetExtensionPointName(Type extensionRootType);
         /// <summary>
         /// Gets the name of the extension builder.
+        /// The extension builder name provided in the addin manifest must comply with the name convention.
         /// </summary>
-        /// <param name="extensionBuilderType">The type of an <see cref="IExtensionBuilder{TExtension}"/> implementation.</param>
+        /// <param name="extensionBuilderTypeName">The full type name of extension builder (an <see cref="IExtensionBuilder{TExtension}"/> implementation).</param>
         /// <returns></returns>
-        string GetExtensionBuilderName(Type extensionBuilderType);
+        string GetExtensionBuilderName(string extensionBuilderTypeName);
     }
 }

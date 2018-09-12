@@ -1,0 +1,17 @@
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\obj\Release\JointCode.AddIns.Mvc.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\obj\Release\JointCode.AddIns.Mvc.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\JointCode.AddIns.Mvc.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\JointCode.AddIns.Mvc.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\JointCode.AddIns.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\JointCode.Common.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\Mono.Cecil.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\System.Web.Razor.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\System.Web.WebPages.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\Microsoft.Web.Infrastructure.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\System.Web.WebPages.Deployment.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\JointCode.AddIns.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\JointCode.Common.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\obj\Release\JointCode.AddIns.Mvc.csproj.CopyComplete
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\obj\Release\JointCode.AddIns.Mvc.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\obj\Release\JointCode.AddIns.Mvc.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\JointCode.AddIns.Mvc\bin\Release\addin.manifest

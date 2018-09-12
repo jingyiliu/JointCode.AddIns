@@ -1,5 +1,8 @@
 ﻿using System.Windows.Forms;
+using JointCode.AddIns.AppLib;
 using JointCode.AddIns.RootAddin;
+using JointCode.AddIns.Shell.AddinsSharedLib;
+using JointCode.AddIns.UiLib;
 
 namespace JointCode.AddIns.ParentAddin
 {
@@ -9,7 +12,8 @@ namespace JointCode.AddIns.ParentAddin
 
         public void Run()
         {
-            MessageBox.Show("That's ParentMenu1Command");
+            var cc = new CommonClass();
+            MessageBox.Show(cc.GetLocation(), "ParentMenu1Command");
         }
 
         #endregion
@@ -21,7 +25,8 @@ namespace JointCode.AddIns.ParentAddin
 
         public void Run()
         {
-            MessageBox.Show("That's ParentMenu2Command");
+            var cc = new CommonClass();
+            MessageBox.Show(cc.GetLocation(), "ParentMenu2Command");
         }
 
         #endregion
@@ -33,7 +38,8 @@ namespace JointCode.AddIns.ParentAddin
 
         public void Run()
         {
-            MessageBox.Show("That's ParentMenu3Command");
+            var np = new NameProvider();
+            MessageBox.Show(np.GetName("ParentMenu3Command"));
         }
 
         #endregion
@@ -45,7 +51,9 @@ namespace JointCode.AddIns.ParentAddin
 
         public void Run()
         {
-            MessageBox.Show("That's ParentMenu4Command");
+            var np = new CommonClass();
+            var messageForm = new MessageForm(np.GetLoadedAssemblies(), "ParentMenu4Command");
+            messageForm.Show();
         }
 
         #endregion

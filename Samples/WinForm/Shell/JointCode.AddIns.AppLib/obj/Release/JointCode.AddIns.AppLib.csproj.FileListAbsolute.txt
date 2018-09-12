@@ -1,0 +1,5 @@
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\bin\Release\JointCode.AddIns.AppLib.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\bin\Release\JointCode.AddIns.AppLib.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Release\JointCode.AddIns.AppLib.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Release\JointCode.AddIns.AppLib.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Release\JointCode.AddIns.AppLib.pdb

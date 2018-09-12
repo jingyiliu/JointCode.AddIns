@@ -22,28 +22,29 @@ namespace JointCode.AddIns.Resolving.Assets
         internal string Directory { get; set; } 
 
         internal DateTime LastWriteTime { get; set; }
+        internal long FileLength { get; set; }
         // 文件的 Hash 码，以确定文件内容未改变
-        internal int FileHash { get; set; } 
+        internal string FileHash { get; set; }
         #endregion
 
-//        #region Non-cacheable Item
-//        internal string FullPath
-//        {
-//            get
-//            {
-//                _fullPath = _fullPath ?? Path.Combine(Directory, FilePath);
-//                return _fullPath;
-//            }
-//            set
-//            {
-//                if (_fullPath == null && !string.IsNullOrEmpty(value))
-//                {
-//                    _fullPath = value;
-//                    FilePath = Path.GetFileName(value);
-//                    Directory = Path.GetDirectoryName(value);
-//                }
-//            }
-//        }
-//        #endregion
+        //        #region Non-cacheable Item
+        //        internal string FullPath
+        //        {
+        //            get
+        //            {
+        //                _fullPath = _fullPath ?? Path.Combine(Directory, FilePath);
+        //                return _fullPath;
+        //            }
+        //            set
+        //            {
+        //                if (_fullPath == null && !string.IsNullOrEmpty(value))
+        //                {
+        //                    _fullPath = value;
+        //                    FilePath = Path.GetFileName(value);
+        //                    Directory = Path.GetDirectoryName(value);
+        //                }
+        //            }
+        //        }
+        //        #endregion
     }
 }

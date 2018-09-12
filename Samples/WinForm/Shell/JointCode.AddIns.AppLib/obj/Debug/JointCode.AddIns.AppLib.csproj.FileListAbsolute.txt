@@ -1,0 +1,14 @@
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\bin\Debug\JointCode.AddIns.AppLib.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\bin\Debug\JointCode.AddIns.AppLib.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.csproj.CoreCompileInputs.cache
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.dll
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.pdb
+F:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.csprojResolveAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\bin\Debug\JointCode.AddIns.AppLib.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\bin\Debug\JointCode.AddIns.AppLib.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.AppLib.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\JointCode.AddIns.AppLib.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.AppLib\obj\Debug\JointCode.AddIns.AppLib.csprojAssemblyReference.cache

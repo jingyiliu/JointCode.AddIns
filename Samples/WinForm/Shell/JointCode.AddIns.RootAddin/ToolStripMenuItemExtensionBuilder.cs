@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Windows.Forms;
 using JointCode.AddIns.Core;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns.RootAddin
 {
@@ -9,9 +11,10 @@ namespace JointCode.AddIns.RootAddin
         ToolStripMenuItem _menu;
         IAddinContext _adnContext;
 
+        [ExtensionProperty(Required = true)]
         public string Name { get; set; }
         public string Tooltip { get; set; }
-        public TypeId CommandType { get; set; }
+        public AddinTypeHandle CommandType { get; set; }
 
         public void AddChildExtension(ToolStripItem child)
         {
@@ -48,7 +51,7 @@ namespace JointCode.AddIns.RootAddin
 
         void OnMenuClick(object sender, EventArgs e)
         {
-            var type = _adnContext.RuntimeSystem.GetType(CommandType);
+            var type = _adnContext.Addin.Runtime.GetType(CommandType);
             var command = (IRootCommand)Activator.CreateInstance(type);
             command.Run();
         }

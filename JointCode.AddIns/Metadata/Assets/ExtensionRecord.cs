@@ -7,22 +7,24 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
-using System.Collections.Generic;
-using System.IO;
 using JointCode.AddIns.Core;
-using JointCode.AddIns.Core.Serialization;
+using JointCode.AddIns.Core.Data;
 using JointCode.AddIns.Resolving.Assets;
 using JointCode.Common;
 using JointCode.Common.IO;
+using System.Collections.Generic;
+using System.IO;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns.Metadata.Assets
 {
-	// a list of extensions that extends a same extension point or parent extension
+    // a list of extensions that extends a same extension point or parent extension
     class ExtensionRecordGroup : ISerializableRecord
     {
         internal static MyFunc<ExtensionRecordGroup> Factory = () => new ExtensionRecordGroup();
         List<ExtensionRecord> _children;
 
+        internal bool Loaded { get; set; }
         internal bool RootIsExtensionPoint { get; set; }
         internal string ParentPath { get; set; } // can be the id of extension point, or the path to another extension
         internal List<ExtensionRecord> Children { get { return _children; } }
@@ -90,9 +92,14 @@ namespace JointCode.AddIns.Metadata.Assets
         	Head = new ExtensionHeadRecord();
         	Head.Read(reader);
             Head.ParentPath = parentPath; // assign the parent path first!!!!
-        	Data = new ExtensionDataRecord();
-        	Data.Read(reader);
-        	
+
+            var hasData = reader.ReadBoolean();
+            if (hasData)
+            {
+                Data = new ExtensionDataRecord();
+                Data.Read(reader);
+            }
+
         	var childCount = reader.ReadInt32();
         	if (childCount > 0) 
         	{
@@ -109,7 +116,15 @@ namespace JointCode.AddIns.Metadata.Assets
         internal void Write(Stream writer)
         {
         	Head.Write(writer);
-        	Data.Write(writer);
+            if (Data != null)
+            {
+                writer.WriteBoolean(true);
+                Data.Write(writer);
+            }
+            else
+            {
+                writer.WriteBoolean(false);
+            }
 
             if (_children == null || _children.Count == 0) 
         	{
@@ -153,12 +168,12 @@ namespace JointCode.AddIns.Metadata.Assets
     class ExtensionDataRecord : ExtensionData
     {
         internal ExtensionDataRecord() { }
-        internal ExtensionDataRecord(Dictionary<string, SerializableHolder> items)
+        internal ExtensionDataRecord(Dictionary<string, DataHolder> items)
             : base(items) { }
 
-        internal void Add(string key, SerializableHolder value)
+        internal void Add(string key, DataHolder value)
         {
-            _items = _items ?? new Dictionary<string, SerializableHolder>();
+            _items = _items ?? new Dictionary<string, DataHolder>();
             _items[key] = value;
         }
 
@@ -172,23 +187,23 @@ namespace JointCode.AddIns.Metadata.Assets
             WriteDictionary(writer, _items);
         }
 
-        static Dictionary<string, SerializableHolder> ReadDictionary(Stream reader)
+        static Dictionary<string, DataHolder> ReadDictionary(Stream reader)
         {
             var count = reader.ReadInt32();
             if (count <= 0)
                 return null;
 
-            var result = new Dictionary<string, SerializableHolder>(count);
+            var result = new Dictionary<string, DataHolder>(count);
             for (int i = 0; i < count; i++)
             {
                 var key = reader.ReadString();
-                var value = SerializationHelper.Read(reader);
+                var value = DataSerializer.Read(reader);
                 result.Add(key, value);
             }
             return result;
         }
 
-        static void WriteDictionary(Stream writer, Dictionary<string, SerializableHolder> value)
+        static void WriteDictionary(Stream writer, Dictionary<string, DataHolder> value)
         {
             if (value == null || value.Count == 0)
             {
@@ -199,7 +214,7 @@ namespace JointCode.AddIns.Metadata.Assets
             foreach (var kv in value)
             {
                 writer.WriteString(kv.Key);
-                SerializationHelper.Write(writer, kv.Value);
+                DataSerializer.Write(writer, kv.Value);
             }
         }
     }

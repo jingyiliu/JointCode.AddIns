@@ -13,71 +13,103 @@ using System.Globalization;
 
 namespace JointCode.AddIns.Core.Runtime
 {
-    abstract class AssemblyKey : IEquatable<AssemblyKey>
+    abstract class AssemblyKey : IEquatable<AssemblyKey>//, IEqualityComparer<AssemblyKey>
     {
-        readonly AssemblyKeyEqualityComparer _comparer = new AssemblyKeyEqualityComparer();
+        static readonly AssemblyKeyEqualityComparer _comparer = new AssemblyKeyEqualityComparer();
         protected string _name;
         protected Version _version;
         protected CultureInfo _cultrue;
         protected byte[] _publicKeyToken;
-//        protected Version _compatVersion;
+        //protected Version _compatVersion;
 
+        protected AssemblyKey() { HashCode = 0; }
         protected AssemblyKey(string name, Version version, CultureInfo cultrue, byte[] publicKeyToken)
         {
         	_name = name;
         	_version = version;
         	_cultrue = cultrue;
         	_publicKeyToken = publicKeyToken;
+            HashCode = 0;
         }
 
-        internal string Name
-        {
-            get { return _name; }
-        }
+        internal static IEqualityComparer<AssemblyKey> EqualityComparer { get { return _comparer; } }
 
-        internal Version Version
-        {
-            get { return _version; }
-        }
+        internal int HashCode { get; set; }
+        internal string Name { get { return _name; } }
+        internal Version Version { get { return _version; } }
+        //internal Version CompatVersion { get { return _compatVersion; } }
+        internal CultureInfo CultureInfo { get { return _cultrue; } }
+        internal byte[] PublicKeyToken { get { return _publicKeyToken; } }
 
-//        internal Version CompatVersion
-//        {
-//            get { return _compatVersion; }
-//        }
-
-        internal CultureInfo CultureInfo
-        {
-            get { return _cultrue; }
-        }
-
-        internal byte[] PublicKeyToken
-        {
-            get { return _publicKeyToken; }
-        }
-
+        #region IEquatable<AssemblyKey>
         public bool Equals(AssemblyKey other)
         {
             return other == null
                 ? false
-                : _comparer.Equals(this, other);
+                : ReferenceEquals(this, other) || EqualsInternal(other);
+        } 
+        #endregion
+
+        #region Object
+        public override bool Equals(object other)
+        {
+            if (other == null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            var obj = other as AssemblyKey;
+            if (obj == null)
+                return false;
+            return EqualsInternal(obj);
+        }
+
+        bool EqualsInternal(AssemblyKey other)
+        {
+            var result = _comparer.Equals(this, other);
+            if (!result)
+                return false;
+            if (_publicKeyToken == null && other._publicKeyToken == null)
+                return true;
+            if (_publicKeyToken != null && other._publicKeyToken != null && _publicKeyToken.Length == other._publicKeyToken.Length)
+            {
+                for (int i = 0; i < _publicKeyToken.Length; i++)
+                {
+                    if (_publicKeyToken[i] != other._publicKeyToken[i])
+                        return false;
+                }
+                return true;
+            }
+            return false;
         }
 
         public override int GetHashCode()
         {
             return _comparer.GetHashCode(this);
         }
+        #endregion
+
+        //#region IEqualityComparer<AssemblyKey>
+        //public bool Equals(AssemblyKey x, AssemblyKey y)
+        //{
+        //    return _comparer.Equals(x, y);
+        //}
+
+        //public int GetHashCode(AssemblyKey obj)
+        //{
+        //    return _comparer.GetHashCode(obj);
+        //} 
+        //#endregion
     }
 
     class AssemblyKeyEqualityComparer : IEqualityComparer<AssemblyKey>
     {
-        int _hashCode = 0;
-
         #region IEqualityComparer<AssemblyKey> Members
 
         //x = old object in the dictionary, y = new object passing to the dictionary
         public bool Equals(AssemblyKey x, AssemblyKey y)
         {
-            return x.Name == y.Name
+            return x != null && y != null 
+                && x.Name == y.Name
                 && x.Version.CompareTo(y.Version) == 0
                 && x.CultureInfo.Equals(y.CultureInfo);
         }
@@ -86,17 +118,17 @@ namespace JointCode.AddIns.Core.Runtime
         {
             //if (obj == null)
             //    return 0;
-            if (_hashCode != 0)
-                return _hashCode;
+            if (obj.HashCode != 0)
+                return obj.HashCode;
 
             //Get HashCode of AssemblyName.PublicKeyToken
-            _hashCode = 17;
+            var hashCode = 17;
             if (obj.PublicKeyToken != null)
             {
                 unchecked
                 {
                     foreach (byte b in obj.PublicKeyToken)
-                        _hashCode = _hashCode * 31 + b.GetHashCode();
+                        hashCode = hashCode * 31 + b.GetHashCode();
                 }
             }
             //Get HashCode of AssemblyName.Name
@@ -109,10 +141,11 @@ namespace JointCode.AddIns.Core.Runtime
                 var lastChar = name[length - 1];  // Last char
                 // Compute hash code from two characters
                 int part1 = firstChar + length;
-                _hashCode = (89 * part1) + lastChar + length; //89 = better distribution
+                hashCode = (89 * part1) + lastChar + length; //89 = better distribution
             }
 
-            return _hashCode;
+            obj.HashCode = hashCode;
+            return hashCode;
         }
 
         #endregion

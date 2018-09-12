@@ -20,7 +20,10 @@ namespace JointCode.AddIns.Metadata.Assets
         List<DataFileRecord> _dataFiles;
         List<AssemblyFileRecord> _assemblyFiles;
 
-        internal string AddinDirectory { get { return ManifestFile.Directory; } }
+        /// <summary>
+        /// The direcoty where the manifest file resides is the base directory of the addin.
+        /// </summary>
+        internal string BaseDirectory { get { return ManifestFile.Directory; } }
 
         #region Files
         internal ManifestFileRecord ManifestFile { get; set; }

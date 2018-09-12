@@ -9,6 +9,7 @@
 
 using System.Collections.Generic;
 using JointCode.AddIns.Core.FileScanning;
+using JointCode.AddIns.Core.Storage;
 using JointCode.AddIns.Parsing;
 using JointCode.AddIns.Parsing.Xml;
 using JointCode.AddIns.Metadata;
@@ -18,19 +19,19 @@ namespace JointCode.AddIns.Resolving
 {
     abstract partial class AddinResolver
 	{
-        protected readonly IndexManager _indexManager;
-        protected readonly BodyRepository _bodyRepo;
-        protected readonly ConvertionManager _convertionManager;
+	    protected readonly AddinStorage AddinStorage;
+        protected readonly AddinRelationManager AddinRelationManager;
+        protected readonly ConvertionManager ConvertionManager;
         readonly List<AddinParser> _addinParsers;
 
-        protected AddinResolver(IndexManager indexManager, BodyRepository bodyRepo, ConvertionManager convertionManager)
+        protected AddinResolver(AddinStorage addinStorage, AddinRelationManager addinRelationManager, ConvertionManager convertionManager)
         {
-            _indexManager = indexManager;
-            _bodyRepo = bodyRepo;
-            _convertionManager = convertionManager;
+            AddinStorage = addinStorage;
+            AddinRelationManager = addinRelationManager;
+            ConvertionManager = convertionManager;
             _addinParsers = new List<AddinParser> { new XmlAddinParser() };
         }
 
-        internal abstract bool Resolve(IMessageDialog dialog, FilePackResult filePackResult);
+        internal abstract ResolutionResult Resolve(INameConvention nameConvention, ResolutionContext ctx, ScanFilePackResult scanFilePackResult);
 	}
 }

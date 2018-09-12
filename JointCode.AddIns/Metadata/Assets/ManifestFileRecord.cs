@@ -22,7 +22,8 @@ namespace JointCode.AddIns.Metadata.Assets
             FilePath = reader.ReadString();
             Directory = reader.ReadString();
             LastWriteTime = reader.ReadDateTime();
-            FileHash = reader.ReadInt32();
+            FileLength = reader.ReadInt64();
+            FileHash = reader.ReadString();
         }
 
         internal void Write(Stream writer)
@@ -30,7 +31,8 @@ namespace JointCode.AddIns.Metadata.Assets
             writer.WriteString(FilePath);
             writer.WriteString(Directory);
             writer.WriteDateTime(LastWriteTime);
-            writer.WriteInt32(FileHash);
+            writer.WriteInt64(FileLength);
+            writer.WriteString(FileHash);
         }
     }
 }

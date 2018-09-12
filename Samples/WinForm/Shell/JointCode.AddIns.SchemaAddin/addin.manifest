@@ -1,0 +1,9 @@
+<Addin guid="33579248-B58B-427C-BE39-25B29A267778" name="SchemaAddin">
+
+  <ExtensionSchema>
+    <MenuStrip path="MenuStrip/ToolStripMenuItem/">
+      <ToolStripSeparator type="JointCode.AddIns.SchemaAddin.ToolStripSeparatorExtensionBuilder" description="This is a separator"/>
+    </MenuStrip>
+  </ExtensionSchema>
+
+</Addin>

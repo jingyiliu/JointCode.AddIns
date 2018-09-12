@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using JointCode.AddIns.Core;
 using JointCode.AddIns.Core.Helpers;
+using JointCode.AddIns.Extension;
 using JointCode.Common;
 using JointCode.Common.IO;
 
@@ -23,6 +24,7 @@ namespace JointCode.AddIns.Metadata.Assets
         internal static MyFunc<ExtensionBuilderRecordGroup> Factory = () => new ExtensionBuilderRecordGroup();
         List<ExtensionBuilderRecord> _children;
 
+        internal bool Loaded { get; set; }
         internal string ParentPath { get; set; } // can be the id of extension point, or the path to another extension
         internal List<ExtensionBuilderRecord> Children { get { return _children; } }
 
@@ -35,12 +37,12 @@ namespace JointCode.AddIns.Metadata.Assets
         public void Read(Stream reader)
         {
         	ParentPath = reader.ReadString();
-            var extensionPointId = StringHelper.GetExtensionPointId(ParentPath);
+            var extensionPointPath = ExtensionHelper.GetExtensionPointName(ParentPath);
         	var childCount = reader.ReadInt32();
             _children = new List<ExtensionBuilderRecord>(childCount);
         	for (int i = 0; i < childCount; i++) 
         	{
-                var child = ExtensionBuilderRecordHelper.Read(reader, extensionPointId, ParentPath);
+                var child = ExtensionBuilderRecordHelper.Read(reader, extensionPointPath, ParentPath);
         		child.Read(reader);
         		Children.Add(child);
         	}
@@ -57,13 +59,14 @@ namespace JointCode.AddIns.Metadata.Assets
 
     static class ExtensionBuilderRecordHelper
     {
-        internal static ExtensionBuilderRecord Read(Stream reader, string extensionPointId, string parentPath)
+        internal static ExtensionBuilderRecord Read(Stream reader, string extensionPointPath, string parentPath)
         {
-            var ebKind = (ExtensionBuilderKind)reader.ReadSByte();
+            var ebByte = reader.ReadSByte();
+            var ebKind = (ExtensionBuilderKind)ebByte;
             if (ebKind == ExtensionBuilderKind.Declared)
-                return new DeclaredExtensionBuilderRecord { ExtensionPointId = extensionPointId, ParentPath = parentPath };
+                return new DeclaredExtensionBuilderRecord { ExtensionPointName = extensionPointPath, ParentPath = parentPath };
             else
-                return new ReferencedExtensionBuilderRecord { ExtensionPointId = extensionPointId, ParentPath = parentPath };
+                return new ReferencedExtensionBuilderRecord { ExtensionPointName = extensionPointPath, ParentPath = parentPath };
         }
 
         internal static void Write(Stream writer, ExtensionBuilderRecord obj)
@@ -80,11 +83,11 @@ namespace JointCode.AddIns.Metadata.Assets
         /// </summary>
         internal string ParentPath { get; set; }
 
-        internal string ExtensionPointId { get; set; }
+        internal string ExtensionPointName { get; set; }
 
         internal string GetPath()
         {
-            return ExtensionPointId + SysConstants.PathSeparator + Id;
+            return ExtensionPointName + SysConstants.PathSeparator + Name;
         }
 
         public override void Read(Stream reader)
@@ -98,7 +101,7 @@ namespace JointCode.AddIns.Metadata.Assets
                 _children = new List<ExtensionBuilderRecord>(childCount);
                 for (int i = 0; i < childCount; i++)
                 {
-                    var child = ExtensionBuilderRecordHelper.Read(reader, ExtensionPointId, thisPath);
+                    var child = ExtensionBuilderRecordHelper.Read(reader, ExtensionPointName, thisPath);
                     child.Read(reader);
                     _children.Add(child);
                 }
@@ -109,7 +112,7 @@ namespace JointCode.AddIns.Metadata.Assets
 
         public bool Equals(ExtensionBuilderRecord other)
         {
-            return Id == other.Id && ParentPath == other.ParentPath;
+            return Name == other.Name && ParentPath == other.ParentPath;
         }
     }
 

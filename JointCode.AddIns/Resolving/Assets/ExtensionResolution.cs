@@ -7,12 +7,13 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
-using System;
-using System.Collections.Generic;
 using JointCode.AddIns.Core;
-using JointCode.AddIns.Core.Serialization;
+using JointCode.AddIns.Core.Data;
 using JointCode.AddIns.Metadata.Assets;
 using JointCode.Common.Conversion;
+using System;
+using System.Collections.Generic;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns.Resolving.Assets
 {
@@ -90,12 +91,10 @@ namespace JointCode.AddIns.Resolving.Assets
         }
 
         // apply some rules.
-        protected bool ApplyRules(IMessageDialog dialog, ResolutionContext ctx, ConvertionManager convertionManager)
+        protected bool ApplyRules(ResolutionResult resolutionResult, ResolutionContext ctx, ConvertionManager convertionManager)
         {
-            var result = this.ExtensionBuildersMatchParent(dialog);
-            if (!this.ExtensionDataMatchesExtensionBuilder(dialog, ctx, convertionManager))
-                result = false;
-            return result;
+            return this.ExtensionBuildersMatchParent(resolutionResult) 
+                && this.ExtensionDataMatchesExtensionBuilder(resolutionResult, ctx, convertionManager);
         }
 
         internal override ExtensionRecord ToRecord()
@@ -109,8 +108,9 @@ namespace JointCode.AddIns.Resolving.Assets
                 ParentPath = Head.ParentPath
             };
 
-            var data = new ExtensionDataRecord(Data.Items);
-            var result = new ExtensionRecord { Head = head, Data = data };
+            var result = Data != null && Data.Items != null
+                ? new ExtensionRecord { Head = head, Data = new ExtensionDataRecord(Data.Items) }
+                : new ExtensionRecord { Head = head };
 
             if (Children != null)
             {
@@ -125,12 +125,12 @@ namespace JointCode.AddIns.Resolving.Assets
     }
 
     // new or updated extension
-    class NewExtensionResolution : ResolvableExtensionResolution
+    class NewOrUpdatedExtensionResolution : ResolvableExtensionResolution
     {
-        internal NewExtensionResolution(AddinResolution declaringAddin)
+        internal NewOrUpdatedExtensionResolution(AddinResolution declaringAddin)
             : base(declaringAddin) { }
 
-        internal override ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager, ResolutionContext ctx)
+        protected override ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx)
         {
             if (Parent != null && ExtensionBuilder != null)
             {
@@ -144,49 +144,60 @@ namespace JointCode.AddIns.Resolving.Assets
             if (Parent == null)
             {
                 ExtensionPointResolution epResolution;
-                if (!ctx.TryGetExtensionPoint(dialog, Head.ParentPath, out epResolution))
+                if (!ctx.TryGetExtensionPoint(resolutionResult, Head.ParentPath, out epResolution))
                 {
                     ExtensionResolution exResolution;
-                    if (!ctx.TryGetExtension(dialog, Head.ParentPath, out exResolution))
+                    if (!ctx.TryGetExtension(resolutionResult, Head.ParentPath, out exResolution))
                     {
-                        dialog.AddError(string.Format("Can not find the parent of the specified extension [{0}] with path [{1}]!", Head.Path, Head.ParentPath));
+                        resolutionResult.AddError(string.Format("Can not find the parent of the specified extension [{0}] with path [{1}]!", Head.Path, Head.ParentPath));
                         return ResolutionStatus.Failed;
                     }
                     if (!ReferenceEquals(exResolution.DeclaringAddin, DeclaringAddin))
                     {
-                        var ep = GetExtensionPointFor(exResolution);
-                        if (ep == null)
-                            return ResolutionStatus.Pending; // the extension point is probably not available right now.
-                        DeclaringAddin.AddExtendedExtensionPoint(ep);
+                        if (exResolution.DeclaringAddin.ResolutionStatus != ResolutionStatus.Success)
+                            return exResolution.DeclaringAddin.ResolutionStatus; // 上级对象解析 failed，子对象解析就 failed。上级 pending，此处也是 pending。
+                        DeclaringAddin.AddExtendedAddin(exResolution.DeclaringAddin);
                     }
+                    //if (!ReferenceEquals(exResolution.DeclaringAddin, DeclaringAddin))
+                    //{
+                    var ep = GetExtensionPointFor(exResolution);
+                    if (ep == null)
+                        return ResolutionStatus.Pending; // the extension point is probably not available right now.
+                    DeclaringAddin.AddExtendedExtensionPoint(ep);
+                    //}
                     Parent = exResolution;
                 }
                 else
                 {
                     if (!ReferenceEquals(epResolution.DeclaringAddin, DeclaringAddin))
-                        DeclaringAddin.AddExtendedExtensionPoint(epResolution);
+                    {
+                        if (epResolution.DeclaringAddin.ResolutionStatus != ResolutionStatus.Success)
+                            return epResolution.DeclaringAddin.ResolutionStatus; // 上级对象解析 failed，子对象解析就 failed。上级 pending，此处也是 pending。
+                        DeclaringAddin.AddExtendedAddin(epResolution.DeclaringAddin);
+                    }
+                    //if (!ReferenceEquals(epResolution.DeclaringAddin, DeclaringAddin))
+                    DeclaringAddin.AddExtendedExtensionPoint(epResolution);
                     Parent = epResolution;
                 }
-                // The metadata of the parent (extension point or another extension) must be loaded before this extension, 
-                // so we needs to add its declaring addin as a dependency.
-                if (!ReferenceEquals(Parent.DeclaringAddin, DeclaringAddin))
-                    DeclaringAddin.AddExtendedAddin(Parent.DeclaringAddin);
             }
 
             if (ExtensionBuilder == null)
             {
                 ExtensionBuilderResolution eb;
-                if (!ctx.TryGetExtensionBuilder(dialog, Head.ExtensionBuilderPath, out eb))
+                if (!ctx.TryGetExtensionBuilder(resolutionResult, Head.ExtensionBuilderPath, out eb))
                 {
-                    dialog.AddError(string.Format("Can not find the extension builder of the specified extension [{0}] with path [{1}]!", Head.Path, Head.ExtensionBuilderPath));
+                    resolutionResult.AddError(string.Format("Can not find the extension builder of the specified extension [{0}] with path [{1}]!", Head.Path, Head.ExtensionBuilderPath));
                     return ResolutionStatus.Failed;
                 }
                 // The type of extension builder must be loaded before this extension, and it might not defined in the same 
                 // addin as current extension (ex), so we needs to add its declaring addin as a reference.
-                // !!!Note that the extension point type must loaded before this extension too, but we'll let the extension 
-                // builder to refer to it.
+                // !!!Note that the extension point type, as well as extension type (T of IExtensionBuilder<T> implmentation)
+                // must be loaded before this extension too, but we'll let the extension builder to reference them.
                 if (!ReferenceEquals(eb.DeclaringAddin, DeclaringAddin))
                 {
+                    //if (eb.Type == null)
+                    if (eb.DeclaringAddin.ResolutionStatus != ResolutionStatus.Success)
+                        return eb.DeclaringAddin.ResolutionStatus;
                     if (eb.Type == null)
                         return ResolutionStatus.Pending;
                     if (!ReferenceEquals(eb.Type.Assembly.DeclaringAddin, DeclaringAddin))
@@ -203,19 +214,23 @@ namespace JointCode.AddIns.Resolving.Assets
             if (Head.SiblingId != null && Sibling == null)
             {
                 ExtensionResolution sibling;
-                if (!ctx.TryGetExtension(dialog, Head.SiblingPath, out sibling))
+                if (!ctx.TryGetExtension(resolutionResult, Head.SiblingPath, out sibling))
                 {
-                    dialog.AddError(string.Format("Can not find the sibling extension of the specified extension [{0}] with path [{1}]!", Head.Path, Head.SiblingPath));
+                    resolutionResult.AddError(string.Format("Can not find the sibling extension of the specified extension [{0}] with path [{1}]!", Head.Path, Head.SiblingPath));
                     return ResolutionStatus.Failed;
                 }
-                Sibling = sibling;
                 // The metadata of the sibling extension must be loaded before this extension, so we needs to add its declaring 
                 // addin as a dependency. 
                 if (!ReferenceEquals(sibling.DeclaringAddin, DeclaringAddin))
+                {
+                    if (sibling.DeclaringAddin.ResolutionStatus != ResolutionStatus.Success)
+                        return sibling.DeclaringAddin.ResolutionStatus; // 上级对象解析 failed，子对象解析就 failed。上级 pending，此处也是 pending。
                     DeclaringAddin.AddExtendedAddin(sibling.DeclaringAddin);
+                }
+                Sibling = sibling;
             }
 
-            if (!ApplyRules(dialog, ctx, convertionManager))
+            if (!ApplyRules(resolutionResult, ctx, convertionManager))
                 return ResolutionStatus.Failed;
 
             return Sibling != null
@@ -230,7 +245,7 @@ namespace JointCode.AddIns.Resolving.Assets
         internal DirectlyAffectedExtensionResolution(AddinResolution declaringAddin)
             : base(declaringAddin) { }
 
-        internal override ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager, ResolutionContext ctx)
+        protected override ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx)
         {
             if (Parent != null && ExtensionBuilder != null)
             {
@@ -244,30 +259,41 @@ namespace JointCode.AddIns.Resolving.Assets
             if (Parent == null)
             {
                 ExtensionPointResolution epResolution;
-                if (!ctx.TryGetExtensionPoint(dialog, Head.ParentPath, out epResolution))
+                if (!ctx.TryGetExtensionPoint(resolutionResult, Head.ParentPath, out epResolution))
                 {
                     ExtensionResolution exResolution;
-                    if (!ctx.TryGetExtension(dialog, Head.ParentPath, out exResolution))
+                    if (!ctx.TryGetExtension(resolutionResult, Head.ParentPath, out exResolution))
+                    {
+                        resolutionResult.AddError(string.Format("Can not find the parent of the specified extension [{0}] with path [{1}]!", Head.Path, Head.ParentPath));
                         return ResolutionStatus.Failed;
+                    }
                     if (!ReferenceEquals(exResolution.DeclaringAddin, DeclaringAddin))
                     {
-                        var ep = GetExtensionPointFor(exResolution);
-                        if (ep == null)
-                            return ResolutionStatus.Pending; // the extension point is probably not available right now.
-                        DeclaringAddin.AddExtendedExtensionPoint(ep);
+                        if (exResolution.DeclaringAddin.ResolutionStatus != ResolutionStatus.Success)
+                            return exResolution.DeclaringAddin.ResolutionStatus; // 上级对象解析 failed，子对象解析就 failed。上级 pending，此处也是 pending。
+                        DeclaringAddin.AddExtendedAddin(exResolution.DeclaringAddin);
                     }
+                    //if (!ReferenceEquals(exResolution.DeclaringAddin, DeclaringAddin))
+                    //{
+                    var ep = GetExtensionPointFor(exResolution);
+                    if (ep == null)
+                        return ResolutionStatus.Pending; // the extension point is probably not available right now.
+                    DeclaringAddin.AddExtendedExtensionPoint(ep);
+                    //}
                     Parent = exResolution;
                 }
                 else
                 {
                     if (!ReferenceEquals(epResolution.DeclaringAddin, DeclaringAddin))
-                        DeclaringAddin.AddExtendedExtensionPoint(epResolution);
+                    {
+                        if (epResolution.DeclaringAddin.ResolutionStatus != ResolutionStatus.Success)
+                            return epResolution.DeclaringAddin.ResolutionStatus; // 上级对象解析 failed，子对象解析就 failed。上级 pending，此处也是 pending。
+                        DeclaringAddin.AddExtendedAddin(epResolution.DeclaringAddin);
+                    }
+                    //if (!ReferenceEquals(epResolution.DeclaringAddin, DeclaringAddin))
+                    DeclaringAddin.AddExtendedExtensionPoint(epResolution);
                     Parent = epResolution;
                 }
-                // The metadata of the parent (extension point or another extension) must be loaded before this extension, 
-                // so we needs to add its declaring addin as a dependency.
-                if (!ReferenceEquals(Parent.DeclaringAddin, DeclaringAddin))
-                    DeclaringAddin.AddExtendedAddin(Parent.DeclaringAddin);
             }
 
             if (ExtensionBuilder == null)
@@ -276,18 +302,18 @@ namespace JointCode.AddIns.Resolving.Assets
                 // the extension builder might be declared in:
                 // 1. the same addin where this extension is declared or other affected addins (use the uid to get the extension builder directly)
                 // 2. an updated addin (use the uid to get the extension builder path, and then use that path to get the extension builder)
-                if (!ctx.TryGetExtensionBuilder(dialog, Head.ExtensionBuilderUid, out eb)) 
+                if (!ctx.TryGetExtensionBuilder(resolutionResult, Head.ExtensionBuilderUid, out eb))
                 {
                     string extensionBuilderPath;
-                    if (!ctx.TryGetExtensionBuilderPath(dialog, Head.ExtensionBuilderUid, out extensionBuilderPath))
+                    if (!ctx.TryGetExtensionBuilderPath(resolutionResult, Head.ExtensionBuilderUid, out extensionBuilderPath))
                         return ResolutionStatus.Failed;
-                    if (!ctx.TryGetExtensionBuilder(dialog, extensionBuilderPath, out eb))
+                    if (!ctx.TryGetExtensionBuilder(resolutionResult, extensionBuilderPath, out eb))
                         return ResolutionStatus.Failed;
                 }
                 // The type of extension builder must be loaded before this extension, and it might not defined in the same 
                 // addin as current extension (ex), so we needs to add its declaring addin as a reference.
-                // !!!Note that the extension point type must loaded before this extension too, but we'll let the extension 
-                // builder to refer to it.
+                // !!!Note that the extension point type, as well as extension type (T of IExtensionBuilder<T> implmentation)
+                // must be loaded before this extension too, but we'll let the extension builder to reference them.
                 if (!ReferenceEquals(eb.DeclaringAddin, DeclaringAddin))
                 {
                     if (eb.Type == null)
@@ -306,16 +332,23 @@ namespace JointCode.AddIns.Resolving.Assets
             if (Head.SiblingId != null && Sibling == null)
             {
                 ExtensionResolution sibling;
-                if (!ctx.TryGetExtension(dialog, Head.SiblingPath, out sibling))
+                if (!ctx.TryGetExtension(resolutionResult, Head.SiblingPath, out sibling))
+                {
+                    resolutionResult.AddError(string.Format("Can not find the sibling extension of the specified extension [{0}] with path [{1}]!", Head.Path, Head.SiblingPath));
                     return ResolutionStatus.Failed;
-                Sibling = sibling;
+                }
                 // The metadata of the sibling extension must be loaded before this extension, so we needs to add its declaring 
                 // addin as a dependency. 
                 if (!ReferenceEquals(sibling.DeclaringAddin, DeclaringAddin))
+                {
+                    if (sibling.DeclaringAddin.ResolutionStatus != ResolutionStatus.Success)
+                        return sibling.DeclaringAddin.ResolutionStatus; // 上级对象解析 failed，子对象解析就 failed。上级 pending，此处也是 pending。
                     DeclaringAddin.AddExtendedAddin(sibling.DeclaringAddin);
+                }
+                Sibling = sibling;
             }
 
-            if (!ApplyRules(dialog, ctx, convertionManager))
+            if (!ApplyRules(resolutionResult, ctx, convertionManager))
                 return ResolutionStatus.Failed;
 
             return Sibling != null
@@ -327,24 +360,27 @@ namespace JointCode.AddIns.Resolving.Assets
     class IndirectlyAffectedExtensionResolution : ExtensionResolution
     {
         readonly ExtensionRecord _old;
-
+        
         internal IndirectlyAffectedExtensionResolution(AddinResolution declaringAddin, ExtensionRecord old)
             : base(declaringAddin)
         {
             _old = old;
         }
 
-        internal override ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager,
+        protected override ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager,
             ResolutionContext ctx)
         {
             if (Parent == null)
             {
                 ExtensionPointResolution epResolution;
-                if (!ctx.TryGetExtensionPoint(dialog, Head.ParentPath, out epResolution))
+                if (!ctx.TryGetExtensionPoint(resolutionResult, Head.ParentPath, out epResolution))
                 {
                     ExtensionResolution exResolution;
-                    if (!ctx.TryGetExtension(dialog, Head.ParentPath, out exResolution))
+                    if (!ctx.TryGetExtension(resolutionResult, Head.ParentPath, out exResolution))
+                    {
+                        _resolutionStatus = ResolutionStatus.Failed;
                         return ResolutionStatus.Failed;
+                    }
                     Parent = exResolution;
                 }
                 else
@@ -356,7 +392,7 @@ namespace JointCode.AddIns.Resolving.Assets
             if (Head.SiblingId != null && Sibling == null)
             {
                 ExtensionResolution sibling;
-                if (!ctx.TryGetExtension(dialog, Head.SiblingPath, out sibling))
+                if (!ctx.TryGetExtension(resolutionResult, Head.SiblingPath, out sibling))
                     return ResolutionStatus.Failed;
                 Sibling = sibling;
             }
@@ -367,7 +403,7 @@ namespace JointCode.AddIns.Resolving.Assets
                 // the same addin where this extension is declared or other affected addins (use the uid to get the extension builder directly)
                 // otherwise, it would not be an indirectly affected addin.
                 ExtensionBuilderResolution eb;
-                if (!ctx.TryGetExtensionBuilder(dialog, Head.ExtensionBuilderUid, out eb))
+                if (!ctx.TryGetExtensionBuilder(resolutionResult, Head.ExtensionBuilderUid, out eb))
                     return ResolutionStatus.Failed;
                 ExtensionBuilder = eb;
             }
@@ -383,21 +419,23 @@ namespace JointCode.AddIns.Resolving.Assets
         }
     }
 
-    class UnaffectedExtensionResolution : ExtensionResolution
+    class UnaffectedExtensionResolution : IndirectlyAffectedExtensionResolution
     {
-        internal UnaffectedExtensionResolution(AddinResolution declaringAddin)
-            : base(declaringAddin) { }
-
-        internal override ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager,
-            ResolutionContext ctx)
+        internal UnaffectedExtensionResolution(AddinResolution declaringAddin, ExtensionRecord old)
+            : base(declaringAddin, old)
         {
-            throw new NotImplementedException();
+            //_resolutionStatus = ResolutionStatus.Success;
         }
 
-        internal override ExtensionRecord ToRecord()
-        {
-            throw new NotImplementedException();
-        }
+        //protected override ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx)
+        //{
+        //    return ResolutionStatus.Success;
+        //}
+
+        //internal override ExtensionRecord ToRecord()
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
     #endregion
 
@@ -451,7 +489,7 @@ namespace JointCode.AddIns.Resolving.Assets
     class ExtensionDataResolution
     {
         readonly Dictionary<string, string> _rawItems;
-        Dictionary<string, SerializableHolder> _items;
+        Dictionary<string, DataHolder> _items;
 
         internal ExtensionDataResolution() { }
         internal ExtensionDataResolution(Dictionary<string, string> rawItems)
@@ -460,15 +498,23 @@ namespace JointCode.AddIns.Resolving.Assets
         }
 
         //internal Dictionary<string, string> RawItems { get { return _rawItems; } }
-        internal Dictionary<string, SerializableHolder> Items { get { return _items; } }
+        internal Dictionary<string, DataHolder> Items { get { return _items; } }
 
-        internal void AddSerializableHolder(string key, SerializableHolder value)
+        internal void AddDataHolder(string key, DataHolder value)
         {
-            _items = _items ?? new Dictionary<string, SerializableHolder>();
+            _items = _items ?? new Dictionary<string, DataHolder>();
             _items[key] = value;
         }
 
-        public bool TryGetString(string key, out string value)
+        internal bool TryGetDataHolder(string key, out DataHolder value)
+        {
+            if (_items != null)
+                return _items.TryGetValue(key, out value);
+            value = null;
+            return false;
+        }
+
+        internal bool TryGetString(string key, out string value)
         {
             if (_rawItems != null)
                 return _rawItems.TryGetValue(key, out value);

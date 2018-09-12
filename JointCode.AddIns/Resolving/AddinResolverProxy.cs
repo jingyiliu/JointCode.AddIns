@@ -7,54 +7,66 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
-using System;
-using JointCode.AddIns.Core.Convertion;
+using JointCode.AddIns.Core;
+using JointCode.AddIns.Core.Data;
 using JointCode.AddIns.Core.FileScanning;
-using JointCode.AddIns.Core.Helpers;
+using JointCode.AddIns.Core.Storage;
 using JointCode.AddIns.Metadata;
+using JointCode.AddIns.Resolving.Assets;
 using JointCode.Common.Conversion;
 
 namespace JointCode.AddIns.Resolving
 {
-    class AddinResolverProxy : MarshalByRefObject
+    class AddinResolverProxy //: MarshalByRefObject
     {
-        // @return value: whether the persistence file (AddinIndexManager/AddinBodyRepository) has been updated.
-        public bool Resolve(IMessageDialog dialog, FilePackResult filePackResult, string persistentFile, string transactionFile)
+        // @return value: whether the persistence file has been updated.
+        public ResolutionResult Resolve(INameConvention nameConvention, AddinFileSettings fileSettings, AssemblyLoadPolicy assemblyLoadPolicy,
+            AddinStorage addinStorage, AddinRelationManager relationManager,
+            ScanFilePackResult scanFilePackResult)
         {
-            var storage = StorageHelper.CreateStorage(persistentFile, transactionFile);
-            var indexManager = new IndexManager { Storage = storage };
-            if (indexManager.Read())
-                indexManager.Build();
-            var bodyRepo = new BodyRepository { Storage = storage };
-            var convertionManager = new ConvertionManager();
-            InitializeConvertion(convertionManager);
+            var ctx = new ResolutionContext();
+            var cm = new ConvertionManager();
+            InitializeDataTransformers(ctx, cm);
 
-            var resolver = new DefaultAddinResolver(indexManager, bodyRepo, convertionManager);
-            var hasNewAddin = resolver.Resolve(dialog, filePackResult);
+            if (assemblyLoadPolicy.PrivateAssemblyProbingDirectories != null)
+            {
+                foreach (var privateAssemblyProbingDirectory in assemblyLoadPolicy.PrivateAssemblyProbingDirectories)
+                    AssemblyResolution.AddSearchDirectory(privateAssemblyProbingDirectory);
+            }
 
-            //storage.Close();
-            return hasNewAddin;
+            var resolver = new DefaultAddinResolver(addinStorage, relationManager, cm);
+            // 强制 ExtensionBuilder 节点应用 NameConvention
+            return resolver.Resolve(nameConvention, ctx, scanFilePackResult);
         }
 
-        static void InitializeConvertion(ConvertionManager convertionManager)
+        static void InitializeDataTransformers(ResolutionContext ctx, ConvertionManager cm)
         {
-            convertionManager.Register(new StringToVersionConverter());
-            convertionManager.Register(new StringToGuidConverter());
-            convertionManager.Register(new StringToDateTimeConverter());
-            convertionManager.Register(new StringToTimeSpanConverter());
-            convertionManager.Register(new StringToDecimalConverter());
-            convertionManager.Register(new StringToBooleanConverter());
-            convertionManager.Register(new StringToCharConverter());
-            convertionManager.Register(new StringToSByteConverter());
-            convertionManager.Register(new StringToByteConverter());
-            convertionManager.Register(new StringToInt16Converter());
-            convertionManager.Register(new StringToUInt16Converter());
-            convertionManager.Register(new StringToInt32Converter());
-            convertionManager.Register(new StringToUInt32Converter());
-            convertionManager.Register(new StringToInt64Converter());
-            convertionManager.Register(new StringToUInt64Converter());
-            convertionManager.Register(new StringToSingleConverter());
-            convertionManager.Register(new StringToDoubleConverter());
+            var transformers = new DataTransformer[]
+            {
+                new StringDataTransformer(), 
+                new TypeHandleDataTransformer(), 
+                new VersionDataTransformer(),
+                new GuidDataTransformer(),
+                new DateTimeDataTransformer(),
+                new TimeSpanDataTransformer(),
+                
+                new BooleanDataTransformer(),
+                new CharDataTransformer(),
+                new SByteDataTransformer(),
+                new ByteDataTransformer(),
+                new Int16DataTransformer(),
+                new UInt16DataTransformer(),
+                new Int32DataTransformer(),
+                new UInt32DataTransformer(),
+                new Int64DataTransformer(),
+                new UInt64DataTransformer(),
+                new SingleDataTransformer(),
+                new DoubleDataTransformer(),
+                new DecimalDataTransformer(),
+            };
+
+            foreach (var transformer in transformers)
+                transformer.Intialize(ctx, cm);
         }
     }
 }

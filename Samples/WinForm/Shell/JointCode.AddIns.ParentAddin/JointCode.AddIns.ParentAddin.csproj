@@ -57,9 +57,24 @@
       <Name>JointCode.AddIns</Name>
       <Private>False</Private>
     </ProjectReference>
+    <ProjectReference Include="..\JointCode.AddIns.AppLib\JointCode.AddIns.AppLib.csproj">
+      <Project>{1e063976-c10a-4eb9-ab1f-5129d0345b31}</Project>
+      <Name>JointCode.AddIns.AppLib</Name>
+      <Private>False</Private>
+    </ProjectReference>
     <ProjectReference Include="..\JointCode.AddIns.RootAddin\JointCode.AddIns.RootAddin.csproj">
       <Project>{092BCD67-9E7D-4DEC-AA87-5DBA4633B6F6}</Project>
       <Name>JointCode.AddIns.RootAddin</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\JointCode.AddIns.Shell.AddinsSharedLib\JointCode.AddIns.Shell.AddinsSharedLib.csproj">
+      <Project>{cf401f18-318f-4acf-a6c6-3dce982f3bde}</Project>
+      <Name>JointCode.AddIns.Shell.AddinsSharedLib</Name>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\JointCode.AddIns.UiLib\JointCode.AddIns.UiLib.csproj">
+      <Project>{7f166708-bb2b-4b58-ad7e-134686f96682}</Project>
+      <Name>JointCode.AddIns.UiLib</Name>
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>

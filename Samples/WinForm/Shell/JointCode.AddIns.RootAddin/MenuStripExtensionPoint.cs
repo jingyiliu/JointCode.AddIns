@@ -1,4 +1,5 @@
 ﻿using System.Windows.Forms;
+using JointCode.AddIns.Extension;
 
 namespace JointCode.AddIns.RootAddin
 {

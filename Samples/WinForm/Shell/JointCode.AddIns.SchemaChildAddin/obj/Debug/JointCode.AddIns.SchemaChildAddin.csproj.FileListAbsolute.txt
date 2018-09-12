@@ -1,0 +1,10 @@
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaChildAddin\bin\Debug\addin.manifest
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaChildAddin\bin\Debug\JointCode.AddIns.SchemaChildAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaChildAddin\bin\Debug\JointCode.AddIns.SchemaChildAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaChildAddin\obj\Debug\JointCode.AddIns.SchemaChildAddin.csprojAssemblyReference.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaChildAddin\obj\Debug\JointCode.AddIns.SchemaChildAddin.csproj.CoreCompileInputs.cache
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaChildAddin\obj\Debug\JointCode.AddIns.SchemaChildAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\JointCode.AddIns.SchemaChildAddin\obj\Debug\JointCode.AddIns.SchemaChildAddin.pdb
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\SchemaChildAddin\addin.manifest
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\SchemaChildAddin\JointCode.AddIns.SchemaChildAddin.dll
+D:\Projects\JointCode\JointCode.AddIns\trunk\Samples\WinForm\Shell\bin\AddIns\SchemaChildAddin\JointCode.AddIns.SchemaChildAddin.pdb

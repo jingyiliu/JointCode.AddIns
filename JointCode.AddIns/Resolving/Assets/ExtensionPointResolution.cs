@@ -7,31 +7,38 @@
 // Licensed under the LGPLv3 license. Please see <http://www.gnu.org/licenses/lgpl-3.0.html> for license text.
 //
 
-using System;
-using System.Collections.Generic;
-using JointCode.AddIns.Metadata;
+using JointCode.AddIns.Core.Helpers;
+using JointCode.AddIns.Core.Storage;
 using JointCode.AddIns.Metadata.Assets;
 using JointCode.Common.Conversion;
+using System;
+using System.Collections.Generic;
 
 namespace JointCode.AddIns.Resolving.Assets
 {
-    abstract class BaseExtensionPointResolution : Resolvable
+    internal interface IExtensionPointPathInfo
+    {
+        string Name { get; set; }
+        //string Path { get; }
+    }
+
+    abstract class BaseExtensionPointResolution : TypeConstrainedResolvable
     {
         List<ExtensionBuilderResolution> _children;
 
         protected BaseExtensionPointResolution(AddinResolution declaringAddin) : base(declaringAddin) { }
-    	
-        internal string Id { get; set; }
+
+        public string Name { get; set; }
         internal string Description { get; set; }
         internal string TypeName { get; set; }
 
         internal List<ExtensionBuilderResolution> Children { get { return _children; } }
         
         #region Dependences
-        // the extension point/builder type
-        internal TypeResolution Type { get; set; }
         // the extension type of the extension point/builder
         internal TypeResolution ExtensionType { get; set; }
+        //// the extension point/builder type
+        //internal TypeResolution Type { get; set; }
         #endregion
 
         internal void AddChild(ExtensionBuilderResolution item)
@@ -42,38 +49,49 @@ namespace JointCode.AddIns.Resolving.Assets
         }
     }
 
-    abstract class ExtensionPointResolution : BaseExtensionPointResolution
+    abstract class ExtensionPointResolution : BaseExtensionPointResolution, IExtensionPointPathInfo
     {
-        internal static ExtensionPointResolution Empty = new NewExtensionPointResolution(null);
+        internal static ExtensionPointResolution Empty = new NewOrUpdatedExtensionPointResolution(null);
 
         internal ExtensionPointResolution(AddinResolution declaringAddin) : base(declaringAddin) { }
 
+        internal string Path { get { return ExtensionHelper.GetExtensionPointPath(this); } }
+
         internal abstract int Uid { get; }
+
+        internal TypeResolution ExtensionRootType { get; set; }
 
         internal abstract ExtensionPointRecord ToRecord();
 
+        // todo: extensionRootType：将会由 IExtensionPoint<TExtension, TExtensionRoot> 的实现类所在的程序集去引用 ExtensionType 和 ExtensionRootType 所在的程序集，最后的结果会添加到 ReferencedAssemblies，此处不必解析
         // apply some rules to extension point.
-        protected bool ApplyRules(IMessageDialog dialog, ResolutionContext ctx, out TypeResolution extensionType)
+        protected bool ApplyRules(ResolutionResult resolutionResult, ResolutionContext ctx, out TypeResolution extensionType, out TypeResolution extensionRootType)
         {
             var result = true;
             if (!Type.IsClass || Type.IsAbstract)
             {
-                dialog.AddError(string.Format("The specified extension point type [{0}] is not a concrete class!", Type.TypeName));
+                resolutionResult.AddError(string.Format("The specified extension point type [{0}] is not a concrete class!", Type.TypeName));
                 result = false;
             }
+            //// An extension point can be declared in an addin (extension schema), yet defined in another addin, thus we don't need the following check.
             //if (!this.DeclaresInSameAddin())
             //{
-            //    dialog.AddError(string.Format("The extension point type [{0}] is expected to be defined and declared in a same addin, while its defining addin is [{1}], and its declaring addin is [{2}], which is not the same as the former!", Type.TypeName, Type.Assembly.DeclaringAddin.AddinId.Guid, DeclaringAddin.AddinId.Guid));
+            //    resolutionResult.AddError(string.Format(
+            //        "The extension point type [{0}] is expected to be defined and declared in a same addin, while its defining addin is [{1}], and its declaring addin is [{2}], which is not the same as the former!", 
+            //        Type.TypeName, Type.Assembly.DeclaringAddin.AddinId.Guid, DeclaringAddin.AddinId.Guid));
             //    result = false;
             //}
-            if (!this.InheritFromExtensionPointInterface(dialog, ctx, out extensionType))
+
+
+            extensionRootType = null;
+            if (!this.InheritFromExtensionPointInterface(resolutionResult, ctx, out extensionType))
             {
-                dialog.AddError(string.Format("The specified extension point type [{0}] does not implement the required interface (IExtensionPoint<TExtension, TRoot>)!", Type.TypeName));
+                resolutionResult.AddError(string.Format("The specified extension point type [{0}] does not implement the required interface (IExtensionPoint<TExtension, TRoot>)!", Type.TypeName));
                 result = false;
             }
-            if (!this.HasPublicParameterLessConstructor())
+            if (!this.Type.HasPublicParameterLessConstructor())
             {
-                dialog.AddError(string.Format("The specified extension point type [{0}] do not have a public parameter-less constructor!", Type.TypeName));
+                resolutionResult.AddError(string.Format("The specified extension point type [{0}] do not have a public parameter-less constructor!", Type.TypeName));
                 result = false;
             }
             return result;
@@ -87,21 +105,22 @@ namespace JointCode.AddIns.Resolving.Assets
 
         // The resolution of an extension point depends on the existence of its implementation type (IExtensionPoint<TExtension, TRoot>), 
         // extension type (TExtension) and root type (TRoot), and it needs to obey some rules.
-        internal override ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager, ResolutionContext ctx)
+        protected override ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx)
         {
             if (Type == null)
             {
                 Type = ctx.GetUniqueAddinType(DeclaringAddin, TypeName);
                 if (Type == null)
                 {
-                    dialog.AddError(string.Format("Can not find the specified extension point type [{0}]!", TypeName));
+                    resolutionResult.AddError(string.Format("Can not find the specified extension point type [{0}]!", TypeName));
                     return ResolutionStatus.Failed;
                 }
 
-                TypeResolution extensionType;
-                if (!ApplyRules(dialog, ctx, out extensionType))
+                TypeResolution extensionType, extensionRootType;
+                if (!ApplyRules(resolutionResult, ctx, out extensionType, out extensionRootType))
                     return ResolutionStatus.Failed;
                 ExtensionType = extensionType;
+                ExtensionRootType = extensionRootType;
 
                 if (Type.Assembly.DeclaringAddin != null &&
                     !ReferenceEquals(Type.Assembly.DeclaringAddin, DeclaringAddin))
@@ -118,21 +137,21 @@ namespace JointCode.AddIns.Resolving.Assets
     }
 
     // New or updated or affected extension point
-    class NewExtensionPointResolution : ResolvableExtensionPointResolution
+    class NewOrUpdatedExtensionPointResolution : ResolvableExtensionPointResolution
     {
         int _uid;
 
-        internal NewExtensionPointResolution(AddinResolution declaringAddin)
+        internal NewOrUpdatedExtensionPointResolution(AddinResolution declaringAddin)
             : base(declaringAddin) { }
 
         internal override int Uid { get { return _uid; } }
 
         internal override ExtensionPointRecord ToRecord()
         {
-            _uid = IndexManager.GetNextExtensionPointUid();
+            _uid = UidStorage.GetNextExtensionPointUid();
             var result = new ExtensionPointRecord
             {
-                Id = Id,
+                Name = Name,
                 Description = Description,
                 TypeName = TypeName,
                 Uid = _uid,
@@ -163,7 +182,7 @@ namespace JointCode.AddIns.Resolving.Assets
         {
             var result = new ExtensionPointRecord
             {
-                Id = Id,
+                Name = Name,
                 Description = Description,
                 TypeName = TypeName,
                 Uid = _old.Uid,
@@ -195,10 +214,10 @@ namespace JointCode.AddIns.Resolving.Assets
 
         internal override ExtensionPointRecord ToRecord()
         {
-            throw new NotImplementedException();
+            return _old;
         }
 
-        internal override ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager, ResolutionContext ctx)
+        protected override ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx)
         {
             if (Type == null)
             {
@@ -206,33 +225,34 @@ namespace JointCode.AddIns.Resolving.Assets
                 if (Type == null)
                     return ResolutionStatus.Failed;
 
-                TypeResolution extensionType;
-                if (!ApplyRules(dialog, ctx, out extensionType))
+                TypeResolution extensionType, extensionRootType;
+                if (!ApplyRules(resolutionResult, ctx, out extensionType, out extensionRootType))
                     return ResolutionStatus.Failed;
                 ExtensionType = extensionType;
+                ExtensionRootType = extensionRootType;
             }
 
             return ResolveType(Type);
         }
     }
 
-    class UnaffectedExtensionPointResolution : ExtensionPointResolution
+    class UnaffectedExtensionPointResolution : IndirectlyAffectedExtensionPointResolution
     {
-        readonly ExtensionPointRecord _old;
+        //readonly ExtensionPointRecord _old;
 
         internal UnaffectedExtensionPointResolution(AddinResolution declaringAddin, ExtensionPointRecord old)
-            : base(declaringAddin) { _old = old; }
+            : base(declaringAddin, old) { /*_old = old;*/ }
 
-        internal override int Uid { get { return _old.Uid; } }
+        //internal override int Uid { get { return _old.Uid; } }
 
-        internal override ExtensionPointRecord ToRecord()
-        {
-            throw new NotImplementedException();
-        }
+        //internal override ExtensionPointRecord ToRecord()
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        internal override ResolutionStatus Resolve(IMessageDialog dialog, ConvertionManager convertionManager, ResolutionContext ctx)
-        {
-            throw new NotImplementedException();
-        }
+        //protected override ResolutionStatus DoResolve(ResolutionResult resolutionResult, ConvertionManager convertionManager, ResolutionContext ctx)
+        //{
+        //    return ResolutionStatus.Success;
+        //}
     }
 }
